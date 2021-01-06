@@ -106,16 +106,17 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = NULL, WIS_water =
 
   # recode water scores from the excel scoring table
   scoring$water_score<- r3c(scoring$key_water,WIS_water$key_water,WIS_water$score_water)%>%
-    suppressWarnings(as.numeric())
+    as.numeric()
 
   # recode sanit scores from the excel scoring table
   scoring$sanit_score<- r3c(scoring$key_sanit,WIS_sanitation$key_sanit,WIS_sanitation$score_sanit)%>%
-    suppressWarnings(as.numeric())
+    as.numeric()
 
   # recode final scores from the excel scoring table
   scoring$key_score<-paste0(scoring$water_score,"-/-",scoring$sanit_score)
   scoring$score<- suppressWarnings(r3c(scoring$key_score,WIS_final$key_score,WIS_final$score))
-  scoring$score_final<- scoring$score %>% suppressWarnings(as.numeric())
+  scoring$score_final<- scoring$score%>%
+    as.numeric()
 
   scoring$admin0 <- "BFA"
 
