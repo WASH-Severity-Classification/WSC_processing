@@ -1,0 +1,24 @@
+Package: WSC
+Type: Package
+Title: Process data for the WASH Severity Classification (WSC)
+Version: 0.1.0
+Author: Elliott Messeiller <elliott.messeiller@impact-initiatives.org>
+Maintainer: Elliott Messeiller <elliott.messeiller@impact-initiatives.org>
+Description: The WASH Severity Classification (WSC) is a new interagency global initiative
+    led by the Global WASH Cluster, UNICEF, and IMPACT Initiatives. Developed at the global
+    level through a participatory process, the WSC project aims to develop a
+    standardized approach to classifying the severity of WASH needs and vulnerabilities across contexts.
+    For more information, contact wsc@reach-initiative.org.
+    This package offers functions to process data according to the WSC guidelines.
+Depends:
+    dplyr,
+    R (>= 2.10),
+    googlesheets4,
+    car,
+    stringr,
+    srvyr,
+    tidyr
+License: AGPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1

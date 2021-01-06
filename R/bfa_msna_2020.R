@@ -1,0 +1,38 @@
+#' Multi Sector Needs Assessment 2020 in Burkina Faso
+#'
+#' A dataset the \href{https://data.humdata.org/dataset/burkina-faso-evaluation-multisectorielle-des-besoins-msna-2020}{Multi Sector Needs Assessment (MSNA) 2020} in Burkina Faso.
+#' @details
+#' The dataset was slightly modified from the source URL below. To reproduce it use the following code from the provided link:
+#'
+#' ```
+#'  bfa_msna_2020 <- bfa_msna_2020%>%
+#'   ungroup()%>%
+#'   mutate(
+#'     across(c(starts_with("retour_condition."),"pdi_present_combien", "nombre_soins_difficile"), as.numeric),
+#'     latrine_hygienique = case_when(
+#'       infra_sanitaire %in% c("lat_publiq", "lat_prive", "lat_privep", "toilette") ~ paste("lat", lat_hygiene, sep = "_"),
+#'       infra_sanitaire %in% c("dal_zonep", "dal_precis", "dal_eau", "dal_zonep_am") ~ "dal",
+#'       TRUE ~ NA_character_
+#'     ),
+#'     latrine_shared = case_when(
+#'       infra_sanitaire  %in% c("lat_prive", "toilette") & is.na(type_latrine) ~ "ind",
+#'       type_latrine == "lat_ind" ~ "ind",
+#'       TRUE ~ type_latrine
+#'     ),
+#'     open_defecation = case_when(
+#'       infra_sanitaire %in% c("dal_zonep", "dal_precis", "dal_eau", "dal_zonep_am") ~ 1L,
+#'       infra_sanitaire %in% c("lat_publiq", "lat_prive", "lat_privep", "toilette") ~ 0L,
+#'       TRUE ~ NA_integer_
+#'     ),
+#'     diarrhea_rate_hh_2w = case_when(
+#'       `maladie_moins_5ans/diarrhee` > 0 ~ 1L,
+#'       `maladie_moins_5ans/diarrhee` == 0 ~ 0L,
+#'       TRUE ~ NA_integer_
+#'     )
+#'   )
+#' ```
+#'
+#' @format A data frame with 5956 rows and 636 variables:
+#' @source \url{https://data.humdata.org/dataset/burkina-faso-evaluation-multisectorielle-des-besoins-msna-2020}
+#' @md
+"bfa_msna_2020"
