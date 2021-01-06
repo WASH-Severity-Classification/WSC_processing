@@ -13,10 +13,10 @@ knitr::opts_chunk$set(
 )
 ```
 
-# WSC
+# WSC <img src='man/figures/WSC_logo_EN.png' align="right" height="138.5" />
 
-<!-- badges: start -->
-<!-- badges: end -->
+
+![R-CMD-check](https://github.com/ElliottMess/WSC/workflows/R-CMD-check/badge.svg)
 
 ## About this package
 
