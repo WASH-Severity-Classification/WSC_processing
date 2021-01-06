@@ -51,7 +51,7 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = NULL, WIS_water =
     as.data.frame()
 
   # harmonize uuid columns
-  names(data)<-car::recode(names(data),"c('x_uuid','X_uuid','_uuid')='uuid'")
+  names(data)<-recode_var(names(data),"c('x_uuid','X_uuid','_uuid')='uuid'")
 
   # load the recoding sheet
   recoding<- WIS_AP %>% as.data.frame
