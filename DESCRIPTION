@@ -11,8 +11,9 @@ Description: The WASH Severity Classification (WSC) is a new interagency global 
     For more information, contact wsc@reach-initiative.org.
     This package offers functions to process data according to the WSC guidelines.
 Depends:
+    magrittr,
     dplyr,
-    R (>= 2.10),
+    R (>= 3.6),
     googlesheets4,
     stringr,
     srvyr,

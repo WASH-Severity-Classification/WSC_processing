@@ -109,7 +109,7 @@ recode_var <- function (var, recodes, as.factor, as.numeric = TRUE, levels)
     else as.factor(result)
   }
   else if (as.numeric && (!is.numeric(result))) {
-    result.valid <- na.omit(result)
+    result.valid <- stats::na.omit(result)
     opt <- options(warn = -1)
     result.valid <- as.numeric(result.valid)
     options(opt)
