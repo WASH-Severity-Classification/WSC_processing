@@ -42,39 +42,81 @@ You can install the latest version of WSC from
 devtools::install_github("ElliottMess/WSC")
 ```
 
-## Example
+## Main Functions
 
-This is a basic example which shows you how to solve a common problem:
+The package contains three main functions:
+
+    1. WSC::score_WIS(): scores a dataset according to the calculation model.
+    2. WSC::agg_score(): aggregates results at a specified administrative level
+    3. WSC::twenty_rule(): applies the 20% rule to a specified datasets
+
+Working examples are provided for all the functions based on the
+datasets documented within the package.
+
+### 1\. score\_WIS
 
 ``` r
 library(WSC)
-#> Loading required package: dplyr
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
-#> Loading required package: googlesheets4
-#> Loading required package: car
-#> Loading required package: carData
-#> 
-#> Attaching package: 'car'
-#> The following object is masked from 'package:dplyr':
-#> 
-#>     recode
-#> Loading required package: stringr
-#> Loading required package: srvyr
-#> 
-#> Attaching package: 'srvyr'
-#> The following object is masked from 'package:stats':
-#> 
-#>     filter
-#> Loading required package: tidyr
-## basic example code
+library(knitr)
+
+WIS_scored <- score_WIS(data = WSC::bfa_msna_2020, context_AP = WSC::context_AP, context = "bfa_2020",
+         WSC_AP = WSC::WSC_AP, WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
+         WIS_final = WSC::WIS_final)
+
+kable(head(WIS_scored))
 ```
+
+| admin1      | admin2     | admin3   | water\_source | time\_going\_water\_source | time\_queing\_water\_source | sufficiency\_of\_water | access\_to\_soap | uuid                                 | cluster\_id    | distance\_to\_water\_source | weights     | type\_of\_sanitation\_facility | sanitation\_facility\_sharing | water\_source\_dist | key\_water                      | key\_sanit                                       | water\_score | sanit\_score | key\_score | score | score\_final | admin0 |
+| :---------- | :--------- | :------- | :------------ | :------------------------- | :-------------------------- | :--------------------- | :--------------- | :----------------------------------- | :------------- | :-------------------------- | :---------- | :----------------------------- | :---------------------------- | :------------------ | :------------------------------ | :----------------------------------------------- | :----------- | :----------- | :--------- | :---- | :----------- | :----- |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | f3227fe6-78ba-490b-9480-0f31750ac1f6 | BF480204\_pdi  | less\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_less\_30  | sufficient-/-improved\_less\_30 | open\_defec-/-NA-/-no\_soap                      | 2            | 4            | 2-/-4      | 3     | 3            | BFA    |
+| centre\_est | koulpelogo | ouargaye | improved      | more\_30                   | less\_30                    | sufficient             | no\_soap         | e27b5949-728e-4913-b07f-c94a1b278ace | BF480204\_pdi  | more\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_more\_30  | sufficient-/-improved\_more\_30 | open\_defec-/-NA-/-no\_soap                      | 3            | 4            | 3-/-4      | 4     | 4            | BFA    |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | 127ce1fa-e05c-4b3e-9eca-8df58a4c61de | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_nonhygienic           | shared\_less20                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_nonhygienic-/-shared\_less20-/-no\_soap | 2            | 3            | 2-/-3      | 3     | 3            | BFA    |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | soap             | 994088cf-ac1e-4174-9ecb-ff2201d98655 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | not\_shared                   | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-not\_shared-/-soap           | 2            | 1            | 2-/-1      | 2     | 2            | BFA    |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | afff9552-7ae6-403c-b688-f501285458a2 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | shared\_20to50                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-shared\_20to50-/-no\_soap    | 2            | 4            | 2-/-4      | 3     | 3            | BFA    |
+| sahel       | seno       | dori     | improved      | more\_30                   | more\_30                    | sufficient             | soap             | ec37cd9c-27a4-4a48-8ac5-ceef62c3cfc7 | BF560202\_host | more\_30                    | 0.574334461 | latrine\_hygienic              | shared\_less20                | improved\_more\_30  | sufficient-/-improved\_more\_30 | latrine\_hygienic-/-shared\_less20-/-soap        | 3            | 2            | 3-/-2      | 3     | 3            | BFA    |
+
+### 2\. agg\_score
+
+``` r
+library(WSC)
+library(knitr)
+
+score_agg_admin2 <- agg_score(context = "bfa_2020", context_AP = WSC::context_AP,
+          WSC_AP = WSC::WSC_AP, data = WSC::bfa_msna_2020)
+
+kable(head(score_agg_admin2))
+```
+
+| admin2 | indicator  | choice |     value | context   |
+| :----- | :--------- | :----- | --------: | :-------- |
+| bale   | key\_score | 2-/-1  | 0.0483755 | bfa\_2020 |
+| bale   | key\_score | 2-/-2  | 0.2598389 | bfa\_2020 |
+| bale   | key\_score | 2-/-3  | 0.0125265 | bfa\_2020 |
+| bale   | key\_score | 2-/-4  | 0.0592587 | bfa\_2020 |
+| bale   | key\_score | 3-/-1  | 0.0686043 | bfa\_2020 |
+| bale   | key\_score | 3-/-2  | 0.1557088 | bfa\_2020 |
+
+### 3\. twenty\_rule
+
+``` r
+library(WSC)
+library(knitr)
+
+admin2_twenty_ruled <- twenty_rule(data = score_agg_admin2, col_score = "indicator",
+            col_label = "choice", name_final_score = "score_final",
+            col_agg = "admin2", col_value = "value")
+
+kable(head(admin2_twenty_ruled))
+```
+
+| admin2     | indicator    | context   | score\_2-/-NA-/-NA-/-soap | score\_4-/-NA-/-NA-/-no\_soap | score\_1-/-NA-/-not\_shared-/-soap | score\_2-/-NA-/-not\_shared-/-no\_soap | score\_2-/-NA-/-not\_shared-/-soap | score\_3-/-NA-/-not\_shared-/-soap | score\_sufficient-/-improved\_NA-/-open\_defec-/-NA-/-nsp | score\_2-/-NA-/-NA-/-no\_soap | score\_3-/-NA-/-NA-/-soap | score\_sufficient-/-NA-/-2 | score\_3-/-NA-/-NA-/-no\_soap | score\_sufficient-/-improved\_NA-/-2 | score\_3-/-open\_defec-/-NA-/-nsp | score\_not\_sufficient\_at\_all-/-improved\_NA-/-4 | score\_4-/-NA-/-shared\_less20-/-no\_soap | score\_5-/-NA-/-not\_shared-/-no\_soap | score\_not\_sufficient-/-improved\_NA-/-3 | score\_3-/-NA-/-shared\_less20-/-soap | score\_just\_sufficient-/-improved\_NA-/-NA-/-shared\_less20-/-no\_soap | score\_just\_sufficient-/-NA-/-2 | score\_not\_sufficient-/-NA-/-3 | score\_sufficient-/-NA-/-4 | score\_3-/-latrine\_hygienic-/-shared\_less20-/-nsp | score\_4-/-latrine\_hygienic-/-shared\_less20-/-nsp | score\_4-/-NA-/-not\_shared-/-soap | score\_2-/-open\_defec-/-NA-/-nsp | score\_2-/-NA-/-shared\_less20-/-no\_soap | score\_4-/-NA-/-NA-/-soap | score\_just\_sufficient-/-improved\_NA-/-3 | score\_4-/-NA-/-shared\_20to50-/-no\_soap | score\_just\_sufficient-/-improved\_NA-/-2 | score\_sufficient-/-improved\_NA-/-4 | score\_4-/-open\_defec-/-NA-/-nsp | score\_not\_sufficient-/-improved\_NA-/-2 | score\_not\_sufficient-/-improved\_NA-/-4 | score\_4-/-latrine\_hygienic-/-not\_shared-/-nsp | score\_sufficient-/-NA-/-3 | score\_3-/-latrine\_nonhygienic-/-shared\_20to50-/-nsp |  score\_1 |  score\_2 |  score\_3 |  score\_4 |  score\_5 | score\_final |
+| :--------- | :----------- | :-------- | ------------------------: | ----------------------------: | ---------------------------------: | -------------------------------------: | ---------------------------------: | ---------------------------------: | --------------------------------------------------------: | ----------------------------: | ------------------------: | -------------------------: | ----------------------------: | -----------------------------------: | --------------------------------: | -------------------------------------------------: | ----------------------------------------: | -------------------------------------: | ----------------------------------------: | ------------------------------------: | ----------------------------------------------------------------------: | -------------------------------: | ------------------------------: | -------------------------: | --------------------------------------------------: | --------------------------------------------------: | ---------------------------------: | --------------------------------: | ----------------------------------------: | ------------------------: | -----------------------------------------: | ----------------------------------------: | -----------------------------------------: | -----------------------------------: | --------------------------------: | ----------------------------------------: | ----------------------------------------: | -----------------------------------------------: | -------------------------: | -----------------------------------------------------: | --------: | --------: | --------: | --------: | --------: | :----------- |
+| bale       | score\_final | bfa\_2020 |                 0.0032791 |                            NA |                                 NA |                                     NA |                                 NA |                                 NA |                                                        NA |                            NA |                        NA |                         NA |                            NA |                                   NA |                                NA |                                                 NA |                                        NA |                                     NA |                                        NA |                                    NA |                                                                      NA |                               NA |                              NA |                         NA |                                                  NA |                                                  NA |                                 NA |                                NA |                                        NA |                        NA |                                         NA |                                        NA |                                         NA |                                   NA |                                NA |                                        NA |                                        NA |                                               NA |                         NA |                                                     NA |        NA | 0.3811520 | 0.3965308 | 0.2038645 | 0.0151736 | 4            |
+| bam        | score\_final | bfa\_2020 |                        NA |                     0.0015423 |                                 NA |                                     NA |                                 NA |                                 NA |                                                        NA |                            NA |                        NA |                         NA |                            NA |                                   NA |                                NA |                                                 NA |                                        NA |                                     NA |                                        NA |                                    NA |                                                                      NA |                               NA |                              NA |                         NA |                                                  NA |                                                  NA |                                 NA |                                NA |                                        NA |                        NA |                                         NA |                                        NA |                                         NA |                                   NA |                                NA |                                        NA |                                        NA |                                               NA |                         NA |                                                     NA | 0.0120758 | 0.1987393 | 0.4316692 | 0.3498893 | 0.0060841 | 4            |
+| banwa      | score\_final | bfa\_2020 |                        NA |                            NA |                          0.0067785 |                              0.0067785 |                           0.018674 |                          0.0135569 |                                                        NA |                            NA |                        NA |                         NA |                            NA |                                   NA |                                NA |                                                 NA |                                        NA |                                     NA |                                        NA |                                    NA |                                                                      NA |                               NA |                              NA |                         NA |                                                  NA |                                                  NA |                                 NA |                                NA |                                        NA |                        NA |                                         NA |                                        NA |                                         NA |                                   NA |                                NA |                                        NA |                                        NA |                                               NA |                         NA |                                                     NA | 0.0067785 | 0.2309108 | 0.4806280 | 0.2087811 | 0.0271139 | 4            |
+| bazega     | score\_final | bfa\_2020 |                        NA |                            NA |                                 NA |                                     NA |                                 NA |                                 NA |                                                        NA |                            NA |                        NA |                         NA |                            NA |                                   NA |                                NA |                                                 NA |                                        NA |                                     NA |                                        NA |                                    NA |                                                                      NA |                               NA |                              NA |                         NA |                                                  NA |                                                  NA |                                 NA |                                NA |                                        NA |                        NA |                                         NA |                                        NA |                                         NA |                                   NA |                                NA |                                        NA |                                        NA |                                               NA |                         NA |                                                     NA |        NA | 0.1791556 | 0.5628474 | 0.2579969 |        NA | 4            |
+| bougouriba | score\_final | bfa\_2020 |                        NA |                            NA |                                 NA |                                     NA |                                 NA |                                 NA |                                                        NA |                            NA |                        NA |                         NA |                            NA |                                   NA |                                NA |                                                 NA |                                        NA |                                     NA |                                        NA |                                    NA |                                                                      NA |                               NA |                              NA |                         NA |                                                  NA |                                                  NA |                                 NA |                                NA |                                        NA |                        NA |                                         NA |                                        NA |                                         NA |                                   NA |                                NA |                                        NA |                                        NA |                                               NA |                         NA |                                                     NA |        NA | 0.1117228 | 0.4725281 | 0.3882772 | 0.0274719 | 4            |
+| boulgou    | score\_final | bfa\_2020 |                        NA |                            NA |                                 NA |                                     NA |                                 NA |                                 NA |                                                        NA |                            NA |                        NA |                         NA |                            NA |                                   NA |                                NA |                                                 NA |                                        NA |                                     NA |                                        NA |                                    NA |                                                                      NA |                               NA |                              NA |                         NA |                                                  NA |                                                  NA |                                 NA |                                NA |                                        NA |                        NA |                                         NA |                                        NA |                                         NA |                                   NA |                                NA |                                        NA |                                        NA |                                               NA |                         NA |                                                     NA | 0.0444890 | 0.2459820 | 0.4317736 | 0.2777554 |        NA | 4            |
 
 ## About the WSC
 

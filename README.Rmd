@@ -42,13 +42,55 @@ devtools::install_github("ElliottMess/WSC")
 ```
 
 
-## Example
+## Main Functions
 
-This is a basic example which shows you how to solve a common problem:
+The package contains three main functions:
 
-```{r example}
+    1. WSC::score_WIS(): scores a dataset according to the calculation model.
+    2. WSC::agg_score(): aggregates results at a specified administrative level
+    3. WSC::twenty_rule(): applies the 20% rule to a specified datasets
+    
+Working examples are provided for all the functions based on the datasets documented within the package.
+
+### 1. score_WIS
+
+```{r score_WIS, message=FALSE}
 library(WSC)
-## basic example code
+library(knitr)
+
+WIS_scored <- score_WIS(data = WSC::bfa_msna_2020, context_AP = WSC::context_AP, context = "bfa_2020",
+         WSC_AP = WSC::WSC_AP, WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
+         WIS_final = WSC::WIS_final)
+
+kable(head(WIS_scored))
+
+```
+
+### 2. agg_score
+
+```{r agg_score, message=FALSE}
+library(WSC)
+library(knitr)
+
+score_agg_admin2 <- agg_score(context = "bfa_2020", context_AP = WSC::context_AP,
+          WSC_AP = WSC::WSC_AP, data = WSC::bfa_msna_2020)
+
+kable(head(score_agg_admin2))
+
+```
+
+### 3. twenty_rule
+
+```{r twenty_rule, message=FALSE}
+library(WSC)
+library(knitr)
+
+admin2_twenty_ruled <- twenty_rule(data = score_agg_admin2, col_score = "indicator",
+            col_label = "choice", name_final_score = "score_final",
+            col_agg = "admin2", col_value = "value")
+
+kable(head(admin2_twenty_ruled))
+
 ```
 
 ## About the WSC
