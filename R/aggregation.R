@@ -179,10 +179,10 @@ assign_hiAdmin_loAdmin <- function(HiAdmin_df, HiAdmin_df_name, HiAdmin_name, co
 #'
 #' @examples
 #' \dontrun{
-#'  scoring_var(var = "rsci_score", survey_hh_data = hh_data_scored, "admin1")
+#'  score_var(var = "rsci_score", survey_hh_data = hh_data_scored, "admin1")
 #' }
 #'
-scoring_var <- function(var, survey_hh_data, agg_level){
+score_var <- function(var, survey_hh_data, agg_level){
   survey_hh_data$variables[[var]] <- factor(survey_hh_data$variables[[var]])
 
   survey_hh_data_calc <- survey_hh_data%>%
@@ -344,7 +344,7 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
 
     hh_indic_avail <- hh_indic[hh_indic %in% names(hh_data_scored$variables)]
 
-    addVars_agg_table <- lapply(hh_indic_avail, scoring_var, survey_hh_data = hh_data_scored, agg_level = agg_level)%>%
+    addVars_agg_table <- lapply(hh_indic_avail, score_var, survey_hh_data = hh_data_scored, agg_level = agg_level)%>%
       dplyr::bind_rows()
 
 
