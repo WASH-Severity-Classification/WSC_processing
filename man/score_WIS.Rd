@@ -18,8 +18,8 @@ score_WIS(
 \item{data}{data.frame containing the data to be analysed with the function}
 
 \item{context_AP}{data.frame with context specific analysis plan (AP) that links
- the indicators in the WSC AP to the datasets used in the context analysis.
-See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSC::context_AP```.}
+the indicators in the WSC AP to the datasets used in the context analysis.
+See an example \href{https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing}{here} or in \code{WSC::context_AP}.}
 
 \item{context}{Character string identifying the context to be used in the function call.
 This is to be used if multiple context (geographical or temporal) are being
@@ -27,7 +27,7 @@ analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
 this column can help distinguish the indicators.}
 
 \item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be
-found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)}
+found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (\code{WSC::WSC_AP})}
 
 \item{WIS_water}{data.frame with the scoring reference matrix for the Water
 component of the WASH Insecurity Score (WIS)}
@@ -40,8 +40,8 @@ score of the WIS}
 }
 \value{
 a dataframe containing the results of the scoring for each household
-   in the dataset. NAs are introduced if variables cannot be found or score
-   calculated.
+in the dataset. NAs are introduced if variables cannot be found or score
+calculated.
 }
 \description{
 Score WASH Insecurity Score (WIS)

@@ -27,6 +27,7 @@
 #' score_WIS(data = WSC::bfa_msna_2020, context_AP = WSC::context_AP, context = "bfa_2020",
 #'          WSC_AP = WSC::WSC_AP, WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
 #'          WIS_final = WSC::WIS_final)
+#' @md
 score_WIS<-function(data, context_AP, context = NULL, WSC_AP = NULL, WIS_water = NULL, WIS_sanitation = NULL, WIS_final = NULL){
 
   full_AP <- context_AP%>%
@@ -122,96 +123,6 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = NULL, WIS_water =
 
   return(scoring)
 }
-
-
-#' Aggregate scores at specified aggregation level
-#'
-#' @param data data.frame containing the data to be analysed with the function
-#' @param context Character string identifying the context to be used in the function call.
-#'    This is to be used if multiple context (geographical or temporal) are being
-#'    analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
-#'    this column can help distinguish the indicators.
-#' @param context_AP data.frame with context specific analysis plan (AP) that links
-#'    the indicators in the WSC AP to the datasets used in the context analysis.
-#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSC::context_AP```.
-#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)
-#' @param WIS_water data.frame with the scoring reference matrix for the Water
-#'    component of the WASH Insecurity Score (WIS)
-#' @param WIS_sanitation data.frame with the scoring reference matrix for the
-#'    Sanitation component of the WIS
-#' @param WIS_final data.frame with the scoring reference matrix for the final
-#'    score of the WIS
-#' @param agg_level character string specifying which column should be used to
-#'    aggregate the data. This is is typically an administrative unit (e.g. province,
-#'    region, departement, admin2, etc.)
-#'
-#' @return data.frame containing the aggregated data according to context_AP and WSC_AP
-#' @export
-#'
-#' @examples
-#' agg_score(context = "bfa_2020", context_AP = WSC::context_AP,
-#'           WSC_AP = WSC::WSC_AP, data = WSC::bfa_msna_2020)
-agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", WIS_water = WSC::WIS_water,
-                      WIS_sanitation = WSC::WIS_sanitation, WIS_final = WSC::WIS_final){
-
-  full_AP <- context_AP%>%
-    dplyr::filter(context_AP$context == context)%>%
-    dplyr::left_join(WSC_AP, by = "indicator_code")
-
-  data_scoring <- WSC::score_WIS(data = data,context = context, context_AP = context_AP, WSC_AP = WSC_AP,
-                                 WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final)%>%
-    dplyr::mutate(water_score = factor(water_score),
-           sanit_score = factor(sanit_score),
-           score_final = factor(score_final),
-           key_score = dplyr::if_else(stringr::str_detect(key_score, "NA"), NA_character_, key_score),
-           key_water = dplyr::if_else(stringr::str_detect(key_water, "NA"), NA_character_, key_water),
-           key_sanit = dplyr::if_else(stringr::str_detect(key_sanit, "^NA"), NA_character_, key_sanit)
-    )
-
-  cluster_id <- full_AP$indicator_code[full_AP$indicator_code=="cluster_id"]
-  weights <- full_AP$indicator_code[full_AP$indicator_code=="weights"]
-  data_scoring[,weights] <- as.numeric(data_scoring[,weights])
-
-  ### Formating data_scoring
-  design_data_scoring <- srvyr::as_survey_design(data_scoring,ids=cluster_id, weights = !!weights)%>%
-    dplyr::mutate(water_score = as.factor(water_score),
-           sanit_score = as.factor(sanit_score))
-
-  var_to_analyse <- c("water_score", "key_water",
-                      "sanit_score", "key_sanit",
-                      "score_final", "key_score")
-
-  score_agg_table <- data.frame(indicator = NA, choice = NA, value = NA)
-
-  for(i in 1:length(var_to_analyse)){
-    if(class(design_data_scoring$variables[[var_to_analyse[i]]]) %in% c("factor", "character")){
-      design_data_scoring$variables[[var_to_analyse[i]]] <- factor(design_data_scoring$variables[[var_to_analyse[i]]])
-      score_agg_table <- design_data_scoring%>%
-        dplyr::filter(!is.na(!!dplyr::sym(var_to_analyse[i])))%>%
-        dplyr::group_by(!!dplyr::sym(agg_level),!!dplyr::sym(var_to_analyse[i]))%>%
-        dplyr::summarise(value= srvyr::survey_mean(na.rm = TRUE))%>%
-        dplyr::mutate(indicator = var_to_analyse[i])%>%
-        dplyr::rename(choice = as.character(var_to_analyse[i]))%>%
-        dplyr::select(indicator, choice, value)%>%
-        dplyr::bind_rows(score_agg_table)
-    }else{
-      score_agg_table <- design_data_scoring%>%
-        dplyr::filter(!is.na(!!dplyr::sym(var_to_analyse[i])))%>%
-        dplyr::group_by(!!dplyr::sym(agg_level))%>%
-        dplyr::summarise(!!dplyr::sym(var_to_analyse[i]):= srvyr::survey_mean(!!dplyr::sym(var_to_analyse[i]), na.rm = TRUE))%>%
-        dplyr::mutate(indicator = var_to_analyse[i],
-               choice = NA, value = !!dplyr::sym(var_to_analyse[i]))%>%
-        dplyr::select(indicator, choice, value)%>%
-        dplyr::bind_rows(score_agg_table)
-
-    }
-  }
-
-  score_agg_table$context <- context
-
-  return(score_agg_table)
-}
-
 
 #' @title Function to determine severity in a specific area based on the 20 percent rule.
 #'
