@@ -344,7 +344,7 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
 
     hh_indic_avail <- hh_indic[hh_indic %in% names(hh_data_scored$variables)]
 
-    addVars_agg_table <- lapply(hh_indic_avail, WSC:::scoring_var, survey_hh_data = hh_data_scored, agg_level = agg_level)%>%
+    addVars_agg_table <- lapply(hh_indic_avail, scoring_var, survey_hh_data = hh_data_scored, agg_level = agg_level)%>%
       dplyr::bind_rows()
 
 
