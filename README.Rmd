@@ -49,6 +49,9 @@ The package contains three main functions:
     1. WSC::score_WIS(): scores a dataset according to the calculation model.
     2. WSC::agg_score(): aggregates results at a specified administrative level
     3. WSC::twenty_rule(): applies the 20% rule to a specified datasets
+    4. WSC::assign_hiAdmin_loAdmin(): assign results from a higher administrative level to a lower one in an uniform way (all lower units part of a higher administrative unit have the same value).
+    5. WSC::score_df_AP(): Score dataset according to the Analysis Plan (AP) phases.
+    6. WSC::scoring_var(): Score individual variables according to AP.
     
 Working examples are provided for all the functions based on the datasets documented within the package.
 
@@ -92,6 +95,47 @@ admin2_twenty_ruled <- twenty_rule(data = score_agg_admin2, col_score = "indicat
 kable(head(admin2_twenty_ruled))
 
 ```
+
+### 4. assign_hiAdmin_loAdmin
+
+```{r assign_hiAdmin_loAdmin, message=FALSE}
+library(WSC)
+library(knitr)
+
+admin1_admin2_agg <- assign_hiAdmin_loAdmin(HiAdmin_df = WSC::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
+                       HiAdmin_df_name = "smart_2019_admin1",
+                       context = "bfa_2020", context_AP = WSC::context_AP,
+                       WSC_AP = WSC::WSC_AP, LoAdmin_df = WSC::bfa_msna_2020, LoAdmin_name = "admin2")
+
+
+
+kable(head(admin1_admin2_agg))
+
+```
+
+### 5. score_df_AP
+
+```{r score_df_AP, message=FALSE}
+library(WSC)
+library(knitr)
+
+area_df <- score_df_AP(data = WSC::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
+         data_type = "area",
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
+         WSC_AP = WSC::WSC_AP)
+
+hh_df <- score_df_AP(data = WSC::bfa_msna_2020, data_name = "msna_2020",
+         data_type = "hh",
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
+         WSC_AP = WSC::WSC_AP)
+
+
+
+kable(head(hh_df))
+
+```
+
+
 
 ## About the WSC
 The WASH Severity Classification (WSC) is a new interagency global initiative led by the [Global WASH Cluster](http://washcluster.net/), [UNICEF](https://www.unicef.org/), and [IMPACT Initiatives](impact-initiatives.org/).

@@ -47,6 +47,9 @@ The package contains three main functions:
     1. WSC::score_WIS(): scores a dataset according to the calculation model.
     2. WSC::agg_score(): aggregates results at a specified administrative level
     3. WSC::twenty_rule(): applies the 20% rule to a specified datasets
+    4. WSC::assign_hiAdmin_loAdmin(): assign results from a higher administrative level to a lower one in an uniform way (all lower units part of a higher administrative unit have the same value).
+    5. WSC::score_df_AP(): Score dataset according to the Analysis Plan (AP) phases.
+    6. WSC::scoring_var(): Score individual variables according to AP.
 
 Working examples are provided for all the functions based on the
 datasets documented within the package.
@@ -125,6 +128,61 @@ kable(head(admin2_twenty_ruled))
 | bazega     | score\_final | bfa\_2020 |        NA | 0.1791556 | 0.5628474 | 0.2579969 |        NA | 4            |
 | bougouriba | score\_final | bfa\_2020 |        NA | 0.1117228 | 0.4725281 | 0.3882772 | 0.0274719 | 4            |
 | boulgou    | score\_final | bfa\_2020 | 0.0444890 | 0.2459820 | 0.4317736 | 0.2777554 |        NA | 4            |
+
+### 4\. assign\_hiAdmin\_loAdmin
+
+``` r
+library(WSC)
+library(knitr)
+
+admin1_admin2_agg <- assign_hiAdmin_loAdmin(HiAdmin_df = WSC::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
+                       HiAdmin_df_name = "smart_2019_admin1",
+                       context = "bfa_2020", context_AP = WSC::context_AP,
+                       WSC_AP = WSC::WSC_AP, LoAdmin_df = WSC::bfa_msna_2020, LoAdmin_name = "admin2")
+
+
+
+kable(head(admin1_admin2_agg))
+```
+
+| admin2     | indicator | choice | value | context   |
+| :--------- | :-------- | :----- | ----: | :-------- |
+| koulpelogo | gam\_muac | NA     |   2.3 | bfa\_2020 |
+| seno       | gam\_muac | NA     |   3.3 | bfa\_2020 |
+| sanmatenga | gam\_muac | NA     |   2.1 | bfa\_2020 |
+| boulkiemde | gam\_muac | NA     |   2.1 | bfa\_2020 |
+| loroum     | gam\_muac | NA     |   1.2 | bfa\_2020 |
+| yatenga    | gam\_muac | NA     |   1.2 | bfa\_2020 |
+
+### 5\. score\_df\_AP
+
+``` r
+library(WSC)
+library(knitr)
+
+area_df <- score_df_AP(data = WSC::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
+         data_type = "area",
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
+         WSC_AP = WSC::WSC_AP)
+
+hh_df <- score_df_AP(data = WSC::bfa_msna_2020, data_name = "msna_2020",
+         data_type = "hh",
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
+         WSC_AP = WSC::WSC_AP)
+
+
+
+kable(head(hh_df))
+```
+
+| admin1              | indicator   | choice |     value | context   |
+| :------------------ | :---------- | :----- | --------: | :-------- |
+| boucle\_du\_mouhoun | rcsi\_score | 1      | 0.6779283 | bfa\_2020 |
+| boucle\_du\_mouhoun | rcsi\_score | 2      | 0.2610477 | bfa\_2020 |
+| boucle\_du\_mouhoun | rcsi\_score | 3      | 0.0610240 | bfa\_2020 |
+| cascades            | rcsi\_score | 1      | 0.6445926 | bfa\_2020 |
+| cascades            | rcsi\_score | 2      | 0.3327372 | bfa\_2020 |
+| cascades            | rcsi\_score | 3      | 0.0226702 | bfa\_2020 |
 
 ## About the WSC
 
