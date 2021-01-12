@@ -28,7 +28,7 @@
 #'          WSC_AP = WSC::WSC_AP, WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
 #'          WIS_final = WSC::WIS_final)
 #' @md
-score_WIS<-function(data, context_AP, context = NULL, WSC_AP = NULL, WIS_water = NULL, WIS_sanitation = NULL, WIS_final = NULL){
+score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final){
 
   full_AP <- context_AP%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")
@@ -118,8 +118,6 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = NULL, WIS_water =
   scoring$score<- suppressWarnings(r3c(scoring$key_score,WIS_final$key_score,WIS_final$score))
   scoring$score_final<- scoring$score%>%
     as.numeric()
-
-  scoring$admin0 <- "BFA"
 
   return(scoring)
 }
