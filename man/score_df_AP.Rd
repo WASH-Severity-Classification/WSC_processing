@@ -32,9 +32,9 @@ this column can help distinguish the indicators.}
 
 \item{context_AP}{data.frame with context specific analysis plan (AP) that links
 the indicators in the WSC AP to the datasets used in the context analysis.
-See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSC::context_AP}.}
+See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.}
 
-\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)}
+\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
 }
 \value{
 a data.frame containing the phase for each administrative level taken into consideration
@@ -44,14 +44,14 @@ This function scores datasets according to the phases documented in the AP under
 the columns None/Minimal to Catastrophic.
 }
 \examples{
-area_df <- score_df_AP(data = WSC::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
+area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
          data_type = "area",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
-         WSC_AP = WSC::WSC_AP)
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+         WSC_AP = WSCprocessing::WSC_AP)
 
-hh_df <- score_df_AP(data = WSC::bfa_msna_2020, data_name = "msna_2020",
+hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, data_name = "msna_2020",
          data_type = "hh",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
-         WSC_AP = WSC::WSC_AP)
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+         WSC_AP = WSCprocessing::WSC_AP)
 
 }

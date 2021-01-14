@@ -7,8 +7,8 @@
 #'    this column can help distinguish the indicators.
 #' @param context_AP data.frame with context specific analysis plan (AP) that links
 #'    the indicators in the WSC AP to the datasets used in the context analysis.
-#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSC::context_AP```.
-#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)
+#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSCprocessing::context_AP```.
+#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
 #' @param WIS_water data.frame with the scoring reference matrix for the Water
 #'    component of the WASH Insecurity Score (WIS)
 #' @param WIS_sanitation data.frame with the scoring reference matrix for the
@@ -23,16 +23,16 @@
 #' @export
 #'
 #' @examples
-#' agg_score(context = "bfa_2020", context_AP = WSC::context_AP,
-#'           WSC_AP = WSC::WSC_AP, data = WSC::bfa_msna_2020)
-agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", WIS_water = WSC::WIS_water,
-                      WIS_sanitation = WSC::WIS_sanitation, WIS_final = WSC::WIS_final){
+#' agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+#'           WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020)
+agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", WIS_water = WSCprocessing::WIS_water,
+                      WIS_sanitation = WSCprocessing::WIS_sanitation, WIS_final = WSCprocessing::WIS_final){
 
   full_AP <- context_AP%>%
-    dplyr::filter(context_AP$context == context)%>%
+    dplyr::filter(context == !!context)%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")
 
-  data_scoring <- WSC::score_WIS(data = data,context = context, context_AP = context_AP, WSC_AP = WSC_AP,
+  data_scoring <- score_WIS(data = data,context = context, context_AP = context_AP, WSC_AP = WSC_AP,
                                  WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final)%>%
     dplyr::mutate(water_score = factor(water_score),
                   sanit_score = factor(sanit_score),
@@ -106,8 +106,8 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", W
 #'    this column can help distinguish the indicators.
 #' @param context_AP data.frame with context specific analysis plan (AP) that links
 #'    the indicators in the WSC AP to the datasets used in the context analysis.
-#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSC::context_AP}.
-#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)
+#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.
+#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
 #' @param LoAdmin_df data.frame with the lower administrative unit data. Can be just a list of lower administrative levels.
 #' @param LoAdmin_name character string with the column name of the higher administrative
 #'     unit. Must be identical to the relevant column name in \code{LoAdmin_df} to
@@ -117,15 +117,15 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", W
 #' @export
 #'
 #' @examples
-#' assign_hiAdmin_loAdmin(HiAdmin_df = WSC::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
+#' assign_hiAdmin_loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
 #'                        HiAdmin_df_name = "smart_2019_admin1",
-#'                        context = "bfa_2020", context_AP = WSC::context_AP,
-#'                        WSC_AP = WSC::WSC_AP, LoAdmin_df = WSC::bfa_msna_2020, LoAdmin_name = "admin2")
+#'                        context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+#'                        WSC_AP = WSCprocessing::WSC_AP, LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")
 #'
 assign_hiAdmin_loAdmin <- function(HiAdmin_df, HiAdmin_df_name, HiAdmin_name, context, context_AP, WSC_AP, LoAdmin_df, LoAdmin_name){
 
   full_AP <- context_AP%>%
-    dplyr::filter(context_AP$context == !!context)%>%
+    dplyr::filter(context == !!context)%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")%>%
     dplyr::filter(data_source_name == !!HiAdmin_df_name)
 
@@ -214,22 +214,22 @@ score_var <- function(var, survey_hh_data, agg_level){
 #'    this column can help distinguish the indicators.
 #' @param context_AP data.frame with context specific analysis plan (AP) that links
 #'    the indicators in the WSC AP to the datasets used in the context analysis.
-#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSC::context_AP}.
-#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)
+#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.
+#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
 #'
 #' @return a data.frame containing the phase for each administrative level taken into consideration
 #' @export
 #'
 #' @examples
-#' area_df <- score_df_AP(data = WSC::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
+#' area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
 #'          data_type = "area",
-#'          agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
-#'          WSC_AP = WSC::WSC_AP)
+#'          agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+#'          WSC_AP = WSCprocessing::WSC_AP)
 #'
-#' hh_df <- score_df_AP(data = WSC::bfa_msna_2020, data_name = "msna_2020",
+#' hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, data_name = "msna_2020",
 #'          data_type = "hh",
-#'          agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
-#'          WSC_AP = WSC::WSC_AP)
+#'          agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+#'          WSC_AP = WSCprocessing::WSC_AP)
 #'
 
 score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_level, context, context_AP, WSC_AP){
@@ -242,7 +242,7 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
   }
 
   full_AP <- context_AP%>%
-    dplyr::filter(context_AP$context == !!context)%>%
+    dplyr::filter(context == !!context)%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")%>%
     dplyr::rename(minimal = "None/ minimal", stress = "Stressed", crisis = "Crisis", critical = "Critical", catastrophic = "Catastrophic")%>%
     dplyr::mutate(dplyr::across(c(minimal,stress, crisis, critical, catastrophic), function(col){ stringr::str_replace_all(as.character(col), '\\"', "'")}))
@@ -360,7 +360,7 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
     )
 
     addVars_agg_table_phases <- lapply(unique(addVars_agg_table$indicator), function(x){
-      WSC::twenty_rule(data = addVars_agg_table, col_score = "indicator", col_label = "choice",
+      WSCprocessing::twenty_rule(data = addVars_agg_table, col_score = "indicator", col_label = "choice",
                   name_final_score = x, col_agg = agg_level, col_value = "value")
     })%>%do.call(rbind,.)%>%
       mutate(choice= "Phase", value = score_final)%>%

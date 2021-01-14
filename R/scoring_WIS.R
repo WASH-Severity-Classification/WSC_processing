@@ -3,13 +3,13 @@
 #'     If data is.null, the data sheet associated in the context_AP will be downloaded.
 #' @param context_AP data.frame with context specific analysis plan (AP) that links
 #'     the indicators in the WSC AP to the datasets used in the context analysis.
-#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSC::context_AP```.
+#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSCprocessing::context_AP```.
 #' @param context Character string identifying the context to be used in the function call.
 #'    This is to be used if multiple context (geographical or temporal) are being
 #'    analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
 #'    this column can help distinguish the indicators.
 #' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be
-#'    found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)
+#'    found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
 #' @param WIS_water data.frame with the scoring reference matrix for the Water
 #'    component of the WASH Insecurity Score (WIS)
 #' @param WIS_sanitation data.frame with the scoring reference matrix for the
@@ -24,9 +24,9 @@
 #' @export
 #'
 #' @examples
-#' score_WIS(data = WSC::bfa_msna_2020, context_AP = WSC::context_AP, context = "bfa_2020",
-#'          WSC_AP = WSC::WSC_AP, WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
-#'          WIS_final = WSC::WIS_final)
+#' score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCprocessing::context_AP, context = "bfa_2020",
+#'          WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
+#'          WIS_final = WSCprocessing::WIS_final)
 #' @md
 score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final){
 
@@ -146,11 +146,11 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
 #' @export
 #'
 #' @examples
-#' WSI_score_admin2 <- agg_score(data = WSC::bfa_msna_2020, context = "bfa_2020",
-#'                               context_AP = WSC::context_AP,
-#'                               WSC_AP = WSC::WSC_AP, agg_level = "admin2",
-#'                               WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
-#'                               WIS_final = WSC::WIS_final)
+#' WSI_score_admin2 <- agg_score(data = WSCprocessing::bfa_msna_2020, context = "bfa_2020",
+#'                               context_AP = WSCprocessing::context_AP,
+#'                               WSC_AP = WSCprocessing::WSC_AP, agg_level = "admin2",
+#'                               WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
+#'                               WIS_final = WSCprocessing::WIS_final)
 #'
 #' twenty_rule(data = WSI_score_admin2, col_score = "indicator",
 #'             col_label = "choice", name_final_score = "score_final",

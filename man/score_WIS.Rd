@@ -8,10 +8,10 @@ score_WIS(
   data,
   context_AP,
   context = NULL,
-  WSC_AP = NULL,
-  WIS_water = NULL,
-  WIS_sanitation = NULL,
-  WIS_final = NULL
+  WSC_AP = WSC_AP,
+  WIS_water = WIS_water,
+  WIS_sanitation = WIS_sanitation,
+  WIS_final = WIS_final
 )
 }
 \arguments{
@@ -19,7 +19,7 @@ score_WIS(
 
 \item{context_AP}{data.frame with context specific analysis plan (AP) that links
 the indicators in the WSC AP to the datasets used in the context analysis.
-See an example \href{https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing}{here} or in \code{WSC::context_AP}.}
+See an example \href{https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing}{here} or in \code{WSCprocessing::context_AP}.}
 
 \item{context}{Character string identifying the context to be used in the function call.
 This is to be used if multiple context (geographical or temporal) are being
@@ -27,7 +27,7 @@ analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
 this column can help distinguish the indicators.}
 
 \item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be
-found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (\code{WSC::WSC_AP})}
+found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (\code{WSCprocessing::WSC_AP})}
 
 \item{WIS_water}{data.frame with the scoring reference matrix for the Water
 component of the WASH Insecurity Score (WIS)}
@@ -47,7 +47,7 @@ calculated.
 Score WASH Insecurity Score (WIS)
 }
 \examples{
-score_WIS(data = WSC::bfa_msna_2020, context_AP = WSC::context_AP, context = "bfa_2020",
-         WSC_AP = WSC::WSC_AP, WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
-         WIS_final = WSC::WIS_final)
+score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCprocessing::context_AP, context = "bfa_2020",
+         WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
+         WIS_final = WSCprocessing::WIS_final)
 }

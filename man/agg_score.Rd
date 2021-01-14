@@ -10,9 +10,9 @@ agg_score(
   context_AP,
   WSC_AP,
   agg_level = "admin2",
-  WIS_water = WSC::WIS_water,
-  WIS_sanitation = WSC::WIS_sanitation,
-  WIS_final = WSC::WIS_final
+  WIS_water = WSCprocessing::WIS_water,
+  WIS_sanitation = WSCprocessing::WIS_sanitation,
+  WIS_final = WSCprocessing::WIS_final
 )
 }
 \arguments{
@@ -25,9 +25,9 @@ this column can help distinguish the indicators.}
 
 \item{context_AP}{data.frame with context specific analysis plan (AP) that links
 the indicators in the WSC AP to the datasets used in the context analysis.
-See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSC::context_AP```.}
+See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSCprocessing::context_AP```.}
 
-\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSC::WSC_AP```)}
+\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
 
 \item{agg_level}{character string specifying which column should be used to
 aggregate the data. This is is typically an administrative unit (e.g. province,
@@ -49,6 +49,6 @@ data.frame containing the aggregated data according to context_AP and WSC_AP
 Aggregate scores at specified aggregation level
 }
 \examples{
-agg_score(context = "bfa_2020", context_AP = WSC::context_AP,
-          WSC_AP = WSC::WSC_AP, data = WSC::bfa_msna_2020)
+agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020)
 }

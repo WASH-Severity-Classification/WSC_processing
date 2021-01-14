@@ -14,11 +14,12 @@ Functions rely on the existence of two global analysis plans:
 
   - The general WSC analysis plan (AP) than can be found
     [here](https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing)
-    or as an object in the package (`WSC::WSC_AP`)
+    or as an object in the package (`WSCprocessing::WSC_AP`)
   - The WASH Insecurity Score (WIS) analysis plan that can be found
     [here](https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit?usp=sharing)
     (in multiple sheets) or as an object in the package
-    (`WSC::WIS_water`, `WSC::WIS_sanitation`, `WSC::WIS_final`)
+    (`WSCprocessing::WIS_water`, `WSCprocessing::WIS_sanitation`,
+    `WSCprocessing::WIS_final`)
 
 To contextualise the analysis to the environment in which the WSC is
 applied, users should create:
@@ -26,7 +27,7 @@ applied, users should create:
   - A context specific AP that links the indicators in the WSC AP to the
     datasets used in the context analysis. See an example
     [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing)
-    or in `WSC::context_AP`.
+    or in `WSCprocessing::context_AP`.
 
 The data is stored on googlesheets to ease the remote use of the
 package, but the functions use `data.frames` as inputs.
@@ -44,12 +45,12 @@ devtools::install_github("ElliottMess/WSC")
 
 The package contains three main functions:
 
-    1. WSC::score_WIS(): scores a dataset according to the calculation model.
-    2. WSC::agg_score(): aggregates results at a specified administrative level
-    3. WSC::twenty_rule(): applies the 20% rule to a specified datasets
-    4. WSC::assign_hiAdmin_loAdmin(): assign results from a higher administrative level to a lower one in an uniform way (all lower units part of a higher administrative unit have the same value).
-    5. WSC::score_df_AP(): Score dataset according to the Analysis Plan (AP) phases.
-    6. WSC::scoring_var(): Score individual variables according to AP.
+    1. WSCprocessing::score_WIS(): scores a dataset according to the calculation model.
+    2. WSCprocessing::agg_score(): aggregates results at a specified administrative level
+    3. WSCprocessing::twenty_rule(): applies the 20% rule to a specified datasets
+    4. WSCprocessing::assign_hiAdmin_loAdmin(): assign results from a higher administrative level to a lower one in an uniform way (all lower units part of a higher administrative unit have the same value).
+    5. WSCprocessing::score_df_AP(): Score dataset according to the Analysis Plan (AP) phases.
+    6. WSCprocessing::scoring_var(): Score individual variables according to AP.
 
 Working examples are provided for all the functions based on the
 datasets documented within the package.
@@ -57,12 +58,12 @@ datasets documented within the package.
 ### 1\. score\_WIS
 
 ``` r
-library(WSC)
+library(WSCprocessing)
 library(knitr)
 
-WIS_scored <- score_WIS(data = WSC::bfa_msna_2020, context_AP = WSC::context_AP, context = "bfa_2020",
-         WSC_AP = WSC::WSC_AP, WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
-         WIS_final = WSC::WIS_final)
+WIS_scored <- score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCprocessing::context_AP, context = "bfa_2020",
+         WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
+         WIS_final = WSCprocessing::WIS_final)
 #> Warning in r3c(scoring$key_water, WIS_water$key_water, WIS_water$score_water)
 #> %>% : NAs introduced by coercion
 #> Warning in r3c(scoring$key_sanit, WIS_sanitation$key_sanit,
@@ -72,23 +73,23 @@ WIS_scored <- score_WIS(data = WSC::bfa_msna_2020, context_AP = WSC::context_AP,
 kable(head(WIS_scored))
 ```
 
-| admin1      | admin2     | admin3   | water\_source | time\_going\_water\_source | time\_queing\_water\_source | sufficiency\_of\_water | access\_to\_soap | uuid                                 | cluster\_id    | distance\_to\_water\_source | weights     | type\_of\_sanitation\_facility | sanitation\_facility\_sharing | water\_source\_dist | key\_water                      | key\_sanit                                       | water\_score | sanit\_score | key\_score | score | score\_final | admin0 |
-| :---------- | :--------- | :------- | :------------ | :------------------------- | :-------------------------- | :--------------------- | :--------------- | :----------------------------------- | :------------- | :-------------------------- | :---------- | :----------------------------- | :---------------------------- | :------------------ | :------------------------------ | :----------------------------------------------- | -----------: | -----------: | :--------- | :---- | -----------: | :----- |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | f3227fe6-78ba-490b-9480-0f31750ac1f6 | BF480204\_pdi  | less\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_less\_30  | sufficient-/-improved\_less\_30 | open\_defec-/-NA-/-no\_soap                      |            2 |            4 | 2-/-4      | 3     |            3 | BFA    |
-| centre\_est | koulpelogo | ouargaye | improved      | more\_30                   | less\_30                    | sufficient             | no\_soap         | e27b5949-728e-4913-b07f-c94a1b278ace | BF480204\_pdi  | more\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_more\_30  | sufficient-/-improved\_more\_30 | open\_defec-/-NA-/-no\_soap                      |            3 |            4 | 3-/-4      | 4     |            4 | BFA    |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | 127ce1fa-e05c-4b3e-9eca-8df58a4c61de | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_nonhygienic           | shared\_less20                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_nonhygienic-/-shared\_less20-/-no\_soap |            2 |            3 | 2-/-3      | 3     |            3 | BFA    |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | soap             | 994088cf-ac1e-4174-9ecb-ff2201d98655 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | not\_shared                   | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-not\_shared-/-soap           |            2 |            1 | 2-/-1      | 2     |            2 | BFA    |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | afff9552-7ae6-403c-b688-f501285458a2 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | shared\_20to50                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-shared\_20to50-/-no\_soap    |            2 |            4 | 2-/-4      | 3     |            3 | BFA    |
-| sahel       | seno       | dori     | improved      | more\_30                   | more\_30                    | sufficient             | soap             | ec37cd9c-27a4-4a48-8ac5-ceef62c3cfc7 | BF560202\_host | more\_30                    | 0.574334461 | latrine\_hygienic              | shared\_less20                | improved\_more\_30  | sufficient-/-improved\_more\_30 | latrine\_hygienic-/-shared\_less20-/-soap        |            3 |            2 | 3-/-2      | 3     |            3 | BFA    |
+| admin1      | admin2     | admin3   | water\_source | time\_going\_water\_source | time\_queing\_water\_source | sufficiency\_of\_water | access\_to\_soap | uuid                                 | cluster\_id    | distance\_to\_water\_source | weights     | type\_of\_sanitation\_facility | sanitation\_facility\_sharing | water\_source\_dist | key\_water                      | key\_sanit                                       | water\_score | sanit\_score | key\_score | score | score\_final |
+| :---------- | :--------- | :------- | :------------ | :------------------------- | :-------------------------- | :--------------------- | :--------------- | :----------------------------------- | :------------- | :-------------------------- | :---------- | :----------------------------- | :---------------------------- | :------------------ | :------------------------------ | :----------------------------------------------- | -----------: | -----------: | :--------- | :---- | -----------: |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | f3227fe6-78ba-490b-9480-0f31750ac1f6 | BF480204\_pdi  | less\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_less\_30  | sufficient-/-improved\_less\_30 | open\_defec-/-NA-/-no\_soap                      |            2 |            4 | 2-/-4      | 3     |            3 |
+| centre\_est | koulpelogo | ouargaye | improved      | more\_30                   | less\_30                    | sufficient             | no\_soap         | e27b5949-728e-4913-b07f-c94a1b278ace | BF480204\_pdi  | more\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_more\_30  | sufficient-/-improved\_more\_30 | open\_defec-/-NA-/-no\_soap                      |            3 |            4 | 3-/-4      | 4     |            4 |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | 127ce1fa-e05c-4b3e-9eca-8df58a4c61de | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_nonhygienic           | shared\_less20                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_nonhygienic-/-shared\_less20-/-no\_soap |            2 |            3 | 2-/-3      | 3     |            3 |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | soap             | 994088cf-ac1e-4174-9ecb-ff2201d98655 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | not\_shared                   | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-not\_shared-/-soap           |            2 |            1 | 2-/-1      | 2     |            2 |
+| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | afff9552-7ae6-403c-b688-f501285458a2 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | shared\_20to50                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-shared\_20to50-/-no\_soap    |            2 |            4 | 2-/-4      | 3     |            3 |
+| sahel       | seno       | dori     | improved      | more\_30                   | more\_30                    | sufficient             | soap             | ec37cd9c-27a4-4a48-8ac5-ceef62c3cfc7 | BF560202\_host | more\_30                    | 0.574334461 | latrine\_hygienic              | shared\_less20                | improved\_more\_30  | sufficient-/-improved\_more\_30 | latrine\_hygienic-/-shared\_less20-/-soap        |            3 |            2 | 3-/-2      | 3     |            3 |
 
 ### 2\. agg\_score
 
 ``` r
-library(WSC)
+library(WSCprocessing)
 library(knitr)
 
-score_agg_admin2 <- agg_score(context = "bfa_2020", context_AP = WSC::context_AP,
-          WSC_AP = WSC::WSC_AP, data = WSC::bfa_msna_2020)
+score_agg_admin2 <- agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020)
 #> Warning in r3c(scoring$key_water, WIS_water$key_water, WIS_water$score_water)
 #> %>% : NAs introduced by coercion
 #> Warning in r3c(scoring$key_sanit, WIS_sanitation$key_sanit,
@@ -110,7 +111,7 @@ kable(head(score_agg_admin2))
 ### 3\. twenty\_rule
 
 ``` r
-library(WSC)
+library(WSCprocessing)
 library(knitr)
 
 admin2_twenty_ruled <- twenty_rule(data = score_agg_admin2, col_score = "indicator",
@@ -132,13 +133,13 @@ kable(head(admin2_twenty_ruled))
 ### 4\. assign\_hiAdmin\_loAdmin
 
 ``` r
-library(WSC)
+library(WSCprocessing)
 library(knitr)
 
-admin1_admin2_agg <- assign_hiAdmin_loAdmin(HiAdmin_df = WSC::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
+admin1_admin2_agg <- assign_hiAdmin_loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
                        HiAdmin_df_name = "smart_2019_admin1",
-                       context = "bfa_2020", context_AP = WSC::context_AP,
-                       WSC_AP = WSC::WSC_AP, LoAdmin_df = WSC::bfa_msna_2020, LoAdmin_name = "admin2")
+                       context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+                       WSC_AP = WSCprocessing::WSC_AP, LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")
 
 
 
@@ -157,18 +158,18 @@ kable(head(admin1_admin2_agg))
 ### 5\. score\_df\_AP
 
 ``` r
-library(WSC)
+library(WSCprocessing)
 library(knitr)
 
-area_df <- score_df_AP(data = WSC::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
+area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
          data_type = "area",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
-         WSC_AP = WSC::WSC_AP)
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+         WSC_AP = WSCprocessing::WSC_AP)
 
-hh_df <- score_df_AP(data = WSC::bfa_msna_2020, data_name = "msna_2020",
+hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, data_name = "msna_2020",
          data_type = "hh",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSC::context_AP,
-         WSC_AP = WSC::WSC_AP)
+         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+         WSC_AP = WSCprocessing::WSC_AP)
 
 
 
