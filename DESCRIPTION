@@ -1,4 +1,4 @@
-Package: WSC
+Package: WSCprocessing
 Type: Package
 Title: Process data for the WASH Severity Classification (WSC)
 Version: 0.1.0

@@ -38,11 +38,11 @@ The 20 percent rule states that "an area is classified as the most severe phase 
     The 20 percent rule is based on the \href{https://en.wikipedia.org/wiki/Pareto_principle}{Pareto principale}
 }
 \examples{
-WSI_score_admin2 <- agg_score(data = WSC::bfa_msna_2020, context = "bfa_2020",
-                              context_AP = WSC::context_AP,
-                              WSC_AP = WSC::WSC_AP, agg_level = "admin2",
-                              WIS_water = WSC::WIS_water, WIS_sanitation = WSC::WIS_sanitation,
-                              WIS_final = WSC::WIS_final)
+WSI_score_admin2 <- agg_score(data = WSCprocessing::bfa_msna_2020, context = "bfa_2020",
+                              context_AP = WSCprocessing::context_AP,
+                              WSC_AP = WSCprocessing::WSC_AP, agg_level = "admin2",
+                              WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
+                              WIS_final = WSCprocessing::WIS_final)
 
 twenty_rule(data = WSI_score_admin2, col_score = "indicator",
             col_label = "choice", name_final_score = "score_final",
