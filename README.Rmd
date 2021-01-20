@@ -65,6 +65,7 @@ WIS_scored <- score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCpro
          WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
          WIS_final = WSCprocessing::WIS_final)
 
+
 kable(head(WIS_scored))
 
 ```
@@ -76,7 +77,8 @@ library(WSCprocessing)
 library(knitr)
 
 score_agg_admin2 <- agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020)
+          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
+
 
 kable(head(score_agg_admin2))
 
@@ -92,22 +94,21 @@ admin2_twenty_ruled <- twenty_rule(data = score_agg_admin2, col_score = "indicat
             col_label = "choice", name_final_score = "score_final",
             col_agg = "admin2", col_value = "value")
 
+
 kable(head(admin2_twenty_ruled))
 
 ```
 
-### 4. assign_hiAdmin_loAdmin
+### 4. assign_hiAdmin2loAdmin
 
-```{r assign_hiAdmin_loAdmin, message=FALSE}
+```{r assign_hiAdmin2loAdmin, message=FALSE}
 library(WSCprocessing)
 library(knitr)
 
-admin1_admin2_agg <- assign_hiAdmin_loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
-                       HiAdmin_df_name = "smart_2019_admin1",
+admin1_admin2_agg <- assign_hiAdmin2loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
+                       HiAdmin_df_name = "smart_2019", HiAdmin_df_sheet_name = "cleaned_data_admin1",
                        context = "bfa_2020", context_AP = WSCprocessing::context_AP,
                        WSC_AP = WSCprocessing::WSC_AP, LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")
-
-
 
 kable(head(admin1_admin2_agg))
 
@@ -119,13 +120,13 @@ kable(head(admin1_admin2_agg))
 library(WSCprocessing)
 library(knitr)
 
-area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
-         data_type = "area",
+area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
+         data_sheet_name = "cleaned_data_admin1", data_type = "area",
          agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
          WSC_AP = WSCprocessing::WSC_AP)
 
-hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, data_name = "msna_2020",
-         data_type = "hh",
+hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, 
+         data_type = "hh", data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
          agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
          WSC_AP = WSCprocessing::WSC_AP)
 
