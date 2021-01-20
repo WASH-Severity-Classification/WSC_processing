@@ -24,15 +24,21 @@
 #'
 #' @examples
 #' agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-#'           WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020)
-agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", WIS_water = WSCprocessing::WIS_water,
-                      WIS_sanitation = WSCprocessing::WIS_sanitation, WIS_final = WSCprocessing::WIS_final){
+#'           WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
+agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
+                      WIS_water = WSCprocessing::WIS_water,
+                      WIS_sanitation = WSCprocessing::WIS_sanitation,
+                      WIS_final = WSCprocessing::WIS_final){
 
-  full_AP <- context_AP%>%
-    dplyr::filter(context == !!context)%>%
+  data_name <- gsub("^.*\\:\\:", "", deparse(substitute(data)))
+
+  agg_AP <- context_AP %>%
+    dplyr::filter(context == !!context & data_source_name == !!data_name)
+
+  full_AP <- agg_AP%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")
 
-  data_scoring <- score_WIS(data = data,context = context, context_AP = context_AP, WSC_AP = WSC_AP,
+  data_scoring <- score_WIS(data = data, context = context, context_AP = agg_AP, WSC_AP = WSC_AP,
                                  WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final)%>%
     dplyr::mutate(water_score = factor(water_score),
                   sanit_score = factor(sanit_score),
@@ -66,7 +72,7 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", W
         dplyr::summarise(value= srvyr::survey_mean(na.rm = TRUE))%>%
         dplyr::mutate(indicator = var_to_analyse[i])%>%
         dplyr::rename(choice = as.character(var_to_analyse[i]))%>%
-        dplyr::select(indicator, choice, value)%>%
+        dplyr::select(!!agg_level, indicator, choice, value)%>%
         dplyr::bind_rows(score_agg_table)
     }else{
       score_agg_table <- design_data_scoring%>%
@@ -75,7 +81,7 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", W
         dplyr::summarise(!!dplyr::sym(var_to_analyse[i]):= srvyr::survey_mean(!!dplyr::sym(var_to_analyse[i]), na.rm = TRUE))%>%
         dplyr::mutate(indicator = var_to_analyse[i],
                       choice = NA, value = !!dplyr::sym(var_to_analyse[i]))%>%
-        dplyr::select(indicator, choice, value)%>%
+        dplyr::select(!!agg_level, indicator, choice, value)%>%
         dplyr::bind_rows(score_agg_table)
 
     }
@@ -97,6 +103,7 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", W
 #'
 #' @param HiAdmin_df data.frame with the higher administrative unit data
 #' @param HiAdmin_df_name character string with the name of the \code{HiAdmin_df} as is in the \code{data_source_name} column of \code{context_AP}.
+#' @param HiAdmin_df_sheet_name character string with the name of the \code{sheet_name}
 #' @param HiAdmin_name character string with the column name of the higher administrative
 #'     unit. Must be identical to the relevant column name in \code{LoAdmin_df} to
 #'     allow cross-reference.
@@ -117,17 +124,19 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2", W
 #' @export
 #'
 #' @examples
-#' assign_hiAdmin_loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
-#'                        HiAdmin_df_name = "smart_2019_admin1",
+#' assign_hiAdmin2loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
+#'                        HiAdmin_df_name = "smart_2019", HiAdmin_df_sheet_name = "cleaned_data_admin1",
 #'                        context = "bfa_2020", context_AP = WSCprocessing::context_AP,
 #'                        WSC_AP = WSCprocessing::WSC_AP, LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")
 #'
-assign_hiAdmin_loAdmin <- function(HiAdmin_df, HiAdmin_df_name, HiAdmin_name, context, context_AP, WSC_AP, LoAdmin_df, LoAdmin_name){
+
+assign_hiAdmin2loAdmin <- function(HiAdmin_df, HiAdmin_df_name,HiAdmin_df_sheet_name, HiAdmin_name, context, context_AP, WSC_AP, LoAdmin_df, LoAdmin_name){
 
   full_AP <- context_AP%>%
+    dplyr::mutate(unique_data_source_name = dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_source_name,data_sheet_name, sep = "_"), TRUE ~ data_source_name))%>%
     dplyr::filter(context == !!context)%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")%>%
-    dplyr::filter(data_source_name == !!HiAdmin_df_name)
+    dplyr::filter(unique_data_source_name == paste(!!HiAdmin_df_name, !!HiAdmin_df_sheet_name, sep = "_"))
 
   cluster_id <- HiAdmin_name
   HiAdmin_df$cluster_id <- HiAdmin_df[,HiAdmin_name]
@@ -136,7 +145,7 @@ assign_hiAdmin_loAdmin <- function(HiAdmin_df, HiAdmin_df_name, HiAdmin_name, co
 
   names(HiAdmin_df)<- recode_var(names(HiAdmin_df),"c('x_uuid','X_uuid','_uuid')='uuid'")
 
-  from <- full_AP$indicator
+  from <- full_AP$indicator_code_source
   to <- full_AP$indicator_code
 
   var_to_analyse <- unique(full_AP$indicator_code)[!is.na(unique(full_AP$indicator_code))]
@@ -144,6 +153,7 @@ assign_hiAdmin_loAdmin <- function(HiAdmin_df, HiAdmin_df_name, HiAdmin_name, co
 
   names(HiAdmin_df)<-r3c(names(HiAdmin_df),from,to)
 
+  HiAdmin_df$diarrhea_rate <- c(1:nrow(HiAdmin_df))
 
   addVars_agg_table <- HiAdmin_df%>%
     dplyr::select(any_of(var_to_analyse), !!HiAdmin_name)
@@ -203,7 +213,7 @@ score_var <- function(var, survey_hh_data, agg_level){
 #' the columns None/Minimal to Catastrophic.
 #'
 #' @param data data.frame containing the data to be scored
-#' @param data_name character string with the name of the \code{data} as is in the \code{data_source_name} column of \code{context_AP}.
+#' @param data_sheet_name character string with the name of the \code{sheet_name}
 #' @param data_type character string with the type of data source in \code{data}. Must be "area" or "hh".
 #' @param agg_level character string specifying which column should be used to
 #'    aggregate the data. This is is typically an administrative unit (e.g. province,
@@ -217,22 +227,26 @@ score_var <- function(var, survey_hh_data, agg_level){
 #'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.
 #' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
 #'
-#' @return a data.frame containing the phase for each administrative level taken into consideration
+#' @return a data.frame containing the phase for each administrative level taken
+#'    into consideration
 #' @export
 #'
 #' @examples
-#' area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
-#'          data_type = "area",
-#'          agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+#' area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
+#'          data_sheet_name = "cleaned_data_admin1", data_type = "area",
+#'          agg_level = "admin1", context = "bfa_2020",
+#'          context_AP = WSCprocessing::context_AP,
 #'          WSC_AP = WSCprocessing::WSC_AP)
 #'
-#' hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, data_name = "msna_2020",
+#' hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020,
 #'          data_type = "hh",
-#'          agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+#'          data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
+#'          agg_level = "admin1", context = "bfa_2020",
+#'          context_AP = WSCprocessing::context_AP,
 #'          WSC_AP = WSCprocessing::WSC_AP)
 #'
 
-score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_level, context, context_AP, WSC_AP){
+score_df_AP <- function(data = NULL, data_sheet_name = NULL, data_type = NULL, agg_level, context, context_AP, WSC_AP){
 
   if(is.null(data)){
     stop("data must be supplied")
@@ -241,7 +255,11 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
     stop("data_type must be either 'area' or 'hh'")
   }
 
+  data_name <- gsub("^.*\\:\\:", "", deparse(substitute(data)))
+  data_name_unique <- dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_name, data_sheet_name, sep = "_"), TRUE ~ data_name)
+
   full_AP <- context_AP%>%
+    dplyr::mutate(unique_data_source_name = dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_source_name,data_sheet_name, sep = "_"), TRUE ~ data_source_name))%>%
     dplyr::filter(context == !!context)%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")%>%
     dplyr::rename(minimal = "None/ minimal", stress = "Stressed", crisis = "Crisis", critical = "Critical", catastrophic = "Catastrophic")%>%
@@ -297,10 +315,10 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
   if(data_type == "hh"){
 
     hh_data <- data
-    hh_data_name <- data_name
+    hh_data_name <- data_name_unique
 
-    hh_cluster_id <- full_AP$indicator[full_AP$indicator_code=="cluster_id" & full_AP$data_source_name == hh_data_name]
-    hh_weights <- full_AP$indicator[full_AP$indicator_code=="weights" & full_AP$data_source_name == hh_data_name]
+    hh_cluster_id <- full_AP$indicator_code_source[full_AP$indicator_code=="cluster_id" & full_AP$unique_data_source_name == hh_data_name]
+    hh_weights <- full_AP$indicator_code_source[full_AP$indicator_code=="weights" & full_AP$unique_data_source_name == hh_data_name]
 
 
     hh_indic <- unique(ap_scaled$indicator_code[ap_scaled$level == "hh"])
@@ -311,7 +329,7 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
       tidyr::pivot_longer(-c(!!dplyr::sym(agg_level), row_id, !!hh_cluster_id, !!hh_weights),
                           names_to = "indicator", values_to = "value")
 
-    from <- full_AP$indicator
+    from <- full_AP$indicator_code_source
     to <- full_AP$indicator_code
     names(hh_data_AP)<-r3c(names(hh_data_AP),from,to)
 
@@ -350,12 +368,12 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_type = NULL, agg_lev
 
     addVars_agg_table <- suppressWarnings(addVars_agg_table%>%
       tidyr::separate(indicator, into = c("indicator", "choice2"), sep = "\\.")%>%
-      dplyr::mutate(context = context,
+      dplyr::mutate(context = !!context,
              choice = dplyr::case_when(!is.na(choice2)~ as.character(choice2),
                                 TRUE ~ as.character(choice))
       )%>%
       dplyr::select(!!agg_level, indicator, choice, value)%>%
-      dplyr::mutate(context = context)%>%
+      dplyr::mutate(context = !!context)%>%
       dplyr::filter(!is.na(indicator))
     )
 

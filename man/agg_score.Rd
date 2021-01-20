@@ -50,5 +50,5 @@ Aggregate scores at specified aggregation level
 }
 \examples{
 agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020)
+          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
 }

@@ -48,7 +48,7 @@ The package contains three main functions:
     1. WSCprocessing::score_WIS(): scores a dataset according to the calculation model.
     2. WSCprocessing::agg_score(): aggregates results at a specified administrative level
     3. WSCprocessing::twenty_rule(): applies the 20% rule to a specified datasets
-    4. WSCprocessing::assign_hiAdmin_loAdmin(): assign results from a higher administrative level to a lower one in an uniform way (all lower units part of a higher administrative unit have the same value).
+    4. WSCprocessing::assign_hiAdmin2loAdmin(): assign results from a higher administrative level to a lower one in an uniform way (all lower units part of a higher administrative unit have the same value).
     5. WSCprocessing::score_df_AP(): Score dataset according to the Analysis Plan (AP) phases.
     6. WSCprocessing::scoring_var(): Score individual variables according to AP.
 
@@ -136,7 +136,7 @@ kable(head(admin2_twenty_ruled))
 library(WSCprocessing)
 library(knitr)
 
-admin1_admin2_agg <- assign_hiAdmin_loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
+admin1_admin2_agg <- assign_hiAdmin2loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
                        HiAdmin_df_name = "smart_2019_admin1",
                        context = "bfa_2020", context_AP = WSCprocessing::context_AP,
                        WSC_AP = WSCprocessing::WSC_AP, LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")

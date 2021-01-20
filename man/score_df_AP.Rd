@@ -6,7 +6,7 @@
 \usage{
 score_df_AP(
   data = NULL,
-  data_name = NULL,
+  data_sheet_name = NULL,
   data_type = NULL,
   agg_level,
   context,
@@ -17,7 +17,7 @@ score_df_AP(
 \arguments{
 \item{data}{data.frame containing the data to be scored}
 
-\item{data_name}{character string with the name of the \code{data} as is in the \code{data_source_name} column of \code{context_AP}.}
+\item{data_sheet_name}{character string with the name of the \code{sheet_name}}
 
 \item{data_type}{character string with the type of data source in \code{data}. Must be "area" or "hh".}
 
@@ -37,21 +37,25 @@ See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryu
 \item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
 }
 \value{
-a data.frame containing the phase for each administrative level taken into consideration
+a data.frame containing the phase for each administrative level taken
+   into consideration
 }
 \description{
 This function scores datasets according to the phases documented in the AP under
 the columns None/Minimal to Catastrophic.
 }
 \examples{
-area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
-         data_type = "area",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
+         data_sheet_name = "cleaned_data_admin1", data_type = "area",
+         agg_level = "admin1", context = "bfa_2020",
+         context_AP = WSCprocessing::context_AP,
          WSC_AP = WSCprocessing::WSC_AP)
 
-hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, data_name = "msna_2020",
+hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020,
          data_type = "hh",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+         data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
+         agg_level = "admin1", context = "bfa_2020",
+         context_AP = WSCprocessing::context_AP,
          WSC_AP = WSCprocessing::WSC_AP)
 
 }

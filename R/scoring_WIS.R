@@ -38,10 +38,10 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
 
 
   if(is.null(data)){
-    data_url <- unique(WIS_AP$data_source_url)
-    data_sheet <- unique(WIS_AP$sheet)
+    data_url <- unique(WIS_AP$data_worksheet_url)
+    data_sheet <- unique(WIS_AP$data_sheet_name)
     if(length(data_url)>1){
-      stop("Please organise all data used in one googlesheet. At the moment you have more than URL pointing at your data.")
+      stop("Please organise all data used to score the WIS (see WSCprocessing::WSC_AP$wash_scoring) in one googlesheet. At the moment you have more than URL pointing at your data.")
     }
     data <- googlesheets4::read_sheet(data_url, sheet =  data_sheet)
   }
@@ -58,13 +58,12 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
   recoding<- WIS_AP %>% as.data.frame
   recoding<-recoding[recoding$context==context,]
   # value to recode from
-  from<-recoding$"indicator"
+  from<-recoding$"indicator_code_source"
   # value to recode to
   to<-recoding$"indicator_code"
 
   # select the column needed
-  datascore<-data[,names(data)%in%c("uuid",unique(recoding$"indicator"))]
-  data<-datascore
+  datascore<-data[,names(data)%in%c("uuid",unique(recoding$"indicator_code_source"))]
   # rename with indicator
   names(datascore)<-r3c(names(datascore),from,to)
 
@@ -73,9 +72,9 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
                   function(x,recoding,data){
                     index<-recoding$indicator_code==x
                     recoding<-recoding[index,]
-                    from<-recoding$ch_name
-                    to<-recoding$score
-                    sel_mult<-grep("select_multiple",recoding$type)
+                    from<-recoding$choices_name
+                    to<-recoding$score_recoding
+                    sel_mult<-grep("select_multiple",recoding$question_type)
                     # if select multiple for water source recode each option, and take the worse
                     if(length(sel_mult)>0){
                       y<-data[[x]] %>% stringr::str_split(" ") %>% lapply(r3c,from,to) %>%
@@ -106,18 +105,18 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
   scoring$key_sanit<-paste0(scoring$type_of_sanitation_facility,"-/-",scoring$sanitation_facility_sharing,"-/-",scoring$access_to_soap)
 
   # recode water scores from the excel scoring table
-  scoring$water_score<- r3c(scoring$key_water,WIS_water$key_water,WIS_water$score_water)%>%
-    as.numeric()
+  scoring$water_score<- suppressWarnings(r3c(scoring$key_water,WIS_water$key_water,WIS_water$score_water)%>%
+    as.numeric())
 
   # recode sanit scores from the excel scoring table
-  scoring$sanit_score<- r3c(scoring$key_sanit,WIS_sanitation$key_sanit,WIS_sanitation$score_sanit)%>%
-    as.numeric()
+  scoring$sanit_score<- suppressWarnings(r3c(scoring$key_sanit,WIS_sanitation$key_sanit,WIS_sanitation$score_sanit)%>%
+    as.numeric())
 
   # recode final scores from the excel scoring table
   scoring$key_score<-paste0(scoring$water_score,"-/-",scoring$sanit_score)
   scoring$score<- suppressWarnings(r3c(scoring$key_score,WIS_final$key_score,WIS_final$score))
-  scoring$score_final<- scoring$score%>%
-    as.numeric()
+  scoring$score_final<- suppressWarnings(scoring$score%>%
+    as.numeric())
 
   return(scoring)
 }
