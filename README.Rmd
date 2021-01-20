@@ -38,7 +38,7 @@ The data is stored on googlesheets to ease the remote use of the package, but th
 
 You can install the latest version of WSC from [github](https://github.com/ElliottMess/WSC) with:
 ``` r
-devtools::install_github("ElliottMess/WSC")
+devtools::install_github("Severity-Classification/WSC_processing")
 ```
 
 
