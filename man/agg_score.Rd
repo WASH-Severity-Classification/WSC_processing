@@ -10,6 +10,7 @@ agg_score(
   context_AP,
   WSC_AP,
   agg_level = "admin2",
+  data_name,
   WIS_water = WSCprocessing::WIS_water,
   WIS_sanitation = WSCprocessing::WIS_sanitation,
   WIS_final = WSCprocessing::WIS_final
@@ -33,6 +34,8 @@ See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryu
 aggregate the data. This is is typically an administrative unit (e.g. province,
 region, departement, admin2, etc.)}
 
+\item{data_name}{character string identifying the name of the data frame used in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.}
+
 \item{WIS_water}{data.frame with the scoring reference matrix for the Water
 component of the WASH Insecurity Score (WIS)}
 
@@ -50,5 +53,6 @@ Aggregate scores at specified aggregation level
 }
 \examples{
 agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+          data_name = "bfa_msna_2020",
           WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
 }
