@@ -40,6 +40,7 @@ The 20 percent rule states that "an area is classified as the most severe phase 
 \examples{
 WSI_score_admin2 <- agg_score(data = WSCprocessing::bfa_msna_2020, context = "bfa_2020",
                               context_AP = WSCprocessing::context_AP,
+                              data_name = "bfa_msna_2020",
                               WSC_AP = WSCprocessing::WSC_AP, agg_level = "admin2",
                               WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
                               WIS_final = WSCprocessing::WIS_final)
