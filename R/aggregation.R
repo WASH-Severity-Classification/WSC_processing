@@ -1,6 +1,7 @@
 #' Aggregate scores at specified aggregation level
 #'
 #' @param data data.frame containing the data to be analysed with the function
+#' @param data_name character string identifying the name of the data frame used in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.
 #' @param context Character string identifying the context to be used in the function call.
 #'    This is to be used if multiple context (geographical or temporal) are being
 #'    analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
@@ -24,13 +25,14 @@
 #'
 #' @examples
 #' agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
+#'           data_name = "bfa_msna_2020",
 #'           WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
 agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
+                      data_name,
                       WIS_water = WSCprocessing::WIS_water,
                       WIS_sanitation = WSCprocessing::WIS_sanitation,
                       WIS_final = WSCprocessing::WIS_final){
 
-  data_name <- gsub("^.*\\:\\:", "", deparse(substitute(data)))
 
   agg_AP <- context_AP %>%
     dplyr::filter(context == !!context & data_source_name == !!data_name)
@@ -213,6 +215,7 @@ score_var <- function(var, survey_hh_data, agg_level){
 #' the columns None/Minimal to Catastrophic.
 #'
 #' @param data data.frame containing the data to be scored
+#' @param data_name character string identifying the name of the data frame used in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.
 #' @param data_sheet_name character string with the name of the \code{sheet_name}
 #' @param data_type character string with the type of data source in \code{data}. Must be "area" or "hh".
 #' @param agg_level character string specifying which column should be used to
@@ -233,20 +236,21 @@ score_var <- function(var, survey_hh_data, agg_level){
 #'
 #' @examples
 #' area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
+#'          data_name = "bfa_smart_2019",
 #'          data_sheet_name = "cleaned_data_admin1", data_type = "area",
 #'          agg_level = "admin1", context = "bfa_2020",
 #'          context_AP = WSCprocessing::context_AP,
 #'          WSC_AP = WSCprocessing::WSC_AP)
 #'
 #' hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020,
-#'          data_type = "hh",
+#'          data_type = "hh", data_name = "bfa_msna_2020",
 #'          data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
 #'          agg_level = "admin1", context = "bfa_2020",
 #'          context_AP = WSCprocessing::context_AP,
 #'          WSC_AP = WSCprocessing::WSC_AP)
 #'
 
-score_df_AP <- function(data = NULL, data_sheet_name = NULL, data_type = NULL, agg_level, context, context_AP, WSC_AP){
+score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, data_type = NULL, agg_level, context, context_AP, WSC_AP){
 
   if(is.null(data)){
     stop("data must be supplied")
@@ -255,7 +259,6 @@ score_df_AP <- function(data = NULL, data_sheet_name = NULL, data_type = NULL, a
     stop("data_type must be either 'area' or 'hh'")
   }
 
-  data_name <- gsub("^.*\\:\\:", "", deparse(substitute(data)))
   data_name_unique <- dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_name, data_sheet_name, sep = "_"), TRUE ~ data_name)
 
   full_AP <- context_AP%>%

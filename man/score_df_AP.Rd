@@ -6,6 +6,7 @@
 \usage{
 score_df_AP(
   data = NULL,
+  data_name = NULL,
   data_sheet_name = NULL,
   data_type = NULL,
   agg_level,
@@ -16,6 +17,8 @@ score_df_AP(
 }
 \arguments{
 \item{data}{data.frame containing the data to be scored}
+
+\item{data_name}{character string identifying the name of the data frame used in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.}
 
 \item{data_sheet_name}{character string with the name of the \code{sheet_name}}
 
@@ -46,13 +49,14 @@ the columns None/Minimal to Catastrophic.
 }
 \examples{
 area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
+         data_name = "bfa_smart_2019",
          data_sheet_name = "cleaned_data_admin1", data_type = "area",
          agg_level = "admin1", context = "bfa_2020",
          context_AP = WSCprocessing::context_AP,
          WSC_AP = WSCprocessing::WSC_AP)
 
 hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020,
-         data_type = "hh",
+         data_type = "hh", data_name = "bfa_msna_2020",
          data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
          agg_level = "admin1", context = "bfa_2020",
          context_AP = WSCprocessing::context_AP,
