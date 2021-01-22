@@ -55,7 +55,7 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
   data_scoring[,weights] <- as.numeric(data_scoring[,weights])
 
   ### Formating data_scoring
-  design_data_scoring <- srvyr::as_survey_design(data_scoring,ids=cluster_id, weights = !!weights)%>%
+  design_data_scoring <- srvyr::as_survey_design(data_scoring, ids= !!cluster_id, weights = !!weights)%>%
     dplyr::mutate(water_score = as.factor(water_score),
                   sanit_score = as.factor(sanit_score))
 

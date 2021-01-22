@@ -31,7 +31,8 @@
 score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final){
 
   full_AP <- context_AP%>%
-    dplyr::left_join(WSC_AP, by = "indicator_code")
+    dplyr::left_join(WSC_AP, by = "indicator_code") %>%
+    distinct()
 
   WIS_AP <- full_AP%>%
     dplyr::filter(wash_scoring == TRUE | indicator_code %in% c("weights", "cluster_id", "admin1", "admin2", "admin3"))

@@ -1,7 +1,7 @@
 Package: WSCprocessing
 Type: Package
 Title: Process data for the WASH Severity Classification (WSC)
-Version: 0.2.0
+Version: 0.2.1
 Author: Elliott Messeiller <elliott.messeiller@impact-initiatives.org>
 Maintainer: Elliott Messeiller <elliott.messeiller@impact-initiatives.org>
 Description: The WASH Severity Classification (WSC) is a new interagency global initiative
