@@ -48,8 +48,9 @@ This function scores datasets according to the phases documented in the AP under
 the columns None/Minimal to Catastrophic.
 }
 \examples{
+
 area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
-         data_name = "bfa_smart_2019",
+         data_name = "smart_2019",
          data_sheet_name = "cleaned_data_admin1", data_type = "area",
          agg_level = "admin1", context = "bfa_2020",
          context_AP = WSCprocessing::context_AP,

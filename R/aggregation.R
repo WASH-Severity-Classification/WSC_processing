@@ -56,7 +56,7 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
 
   cluster_id <- full_AP$indicator_code[full_AP$indicator_code=="cluster_id"]
   weights <- full_AP$indicator_code[full_AP$indicator_code=="weights"]
-  data_scoring[,weights] <- as.numeric(data_scoring[,weights])
+  data_scoring[,weights] <- as.numeric(data_scoring[[weights]])
 
   ### Formating data_scoring
   design_data_scoring <- srvyr::as_survey_design(data_scoring, ids= !!cluster_id, weights = !!weights)%>%
@@ -432,6 +432,13 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
 #' @export
 #'
 #' @examples
+#'
+#' agg_admin2 <- admin_agg(data = WSCprocessing::bfa_msna_2020, context ="bfa_2020",
+#' context_AP = WSCprocessing::context_AP,  agg_level = "admin2", data_name = "bfa_msna_2020",
+#' weights = "weights_sampling",data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
+#' WSC_AP = WSCprocessing::WSC_AP)
+#'
+
 admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
                       WSC_AP , weights = NULL,data_sheet_name = NULL){
 
@@ -439,12 +446,14 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
     full_AP <- context_AP%>%
       filter(context == !!context)%>%
       left_join(WSC_AP, by = "indicator_code")%>%
-      filter(data_source_name == data_name, is.na(data_sheet_name))
+      filter(data_source_name == data_name, is.na(data_sheet_name),
+             !is.na(indicator_code_source))
   }else{
     full_AP <- context_AP%>%
       filter(context == !!context)%>%
       left_join(WSC_AP, by = "indicator_code")%>%
-      filter(data_source_name == data_name, data_sheet_name == !!data_sheet_name)
+      filter(data_source_name == data_name, data_sheet_name == !!data_sheet_name,
+             !is.na(indicator_code_source))
   }
 
   names(data)<-car::recode(names(data),"c('x_uuid','X_uuid','_uuid')='uuid'")
@@ -458,7 +467,7 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
     weights <- weights_ap
   }
 
-  sampling_id <- full_AP$indicator_code_source[full_AP$indicator_code=="sampling_id"]
+  sampling_id <- full_AP$indicator_code_source[full_AP$indicator_code %in% c("sampling_id", "cluster_id")]
 
   if(length(sampling_id) == 0){
     sampling_id <- NULL
@@ -473,11 +482,11 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
   from <- full_AP$indicator_code_source
   to <- full_AP$indicator_code
 
-  names(data)<-r3c(names(data),from,to)
-
   reduced_data <- data%>%
     select(weights, sampling_id, !!agg_level) %>%
     bind_cols(var_to_analyse_df)
+
+  names(data)<-r3c(names(data),from,to)
 
   design_data <- as_survey(reduced_data ,ids= sampling_id, weights = weights)
 
@@ -527,7 +536,7 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
   analysed_var <- lapply(var_to_analyse, analyse_var) %>%
     bind_rows()
 
-  addVars_agg_table <- addVars_agg_table%>%
+  addVars_agg_table <- analysed_var%>%
     separate(indicator, into = c("indicator", "choice2"), sep = "\\.")%>%
     mutate(context = context,
            choice = case_when(!is.na(choice2)~ as.character(choice2),
@@ -556,6 +565,7 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
 #'
 #' var_recoded <- recode_var(data = WSCprocessing::bfa_msna_2020, var = "critical_handwashing_times", context_AP = WSCprocessing::context_AP)
 #'
+
 recode_var <- function(data, var,context_AP){
   context_AP_var <- context_AP[context_AP$indicator_code == var, ]
   var_source <- unique(context_AP_var$indicator_code_source)

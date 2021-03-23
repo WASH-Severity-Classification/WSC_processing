@@ -17,6 +17,7 @@ Depends:
     googlesheets4,
     stringr,
     srvyr,
+    butteR,
     tidyr
 License: AGPL (>= 3)
 Encoding: UTF-8
