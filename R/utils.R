@@ -5,9 +5,9 @@ rec_missing<-function(x,missings=c('N/A','n/a',999,888,' ','(vide)','d/m','','NA
 }
 
 r3c<-function(vec,name,label){
-  name <-  name %>% ch
-  vec <-  vec %>% ch
-  label <-  label %>% ch
+  name <-  name %>% as.character()
+  vec <-  vec %>% as.character()
+  label <-  label %>% as.character()
 
   if(length(name)==length(label)){
     for (i in 1:length(name)){
@@ -124,3 +124,11 @@ squeezeBlanks<- function (text){
   gsub(" *", "", text)
 }
 
+normalise_string <- function(string){
+  no_ws <- stringr::str_squish(string)
+  lower <- trimws(tolower(no_ws))
+  no_accent <- stringi::stri_trans_general(lower,"Latin-ASCII")
+  remove_other <- stringr::str_replace_all(no_accent, "[-',.()/ ]", "_")
+
+  return(remove_other)
+}

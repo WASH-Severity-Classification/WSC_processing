@@ -32,6 +32,9 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
 
   full_AP <- context_AP%>%
     dplyr::left_join(WSC_AP, by = "indicator_code") %>%
+    dplyr::mutate(
+      indicator_code_source = normalise_string(indicator_code_source)
+    ) %>%
     distinct()
 
   WIS_AP <- full_AP%>%
