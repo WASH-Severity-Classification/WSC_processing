@@ -54,9 +54,20 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
                   key_sanit = dplyr::if_else(stringr::str_detect(key_sanit, "^NA"), NA_character_, key_sanit)
     )
 
-  cluster_id <- full_AP$indicator_code[full_AP$indicator_code=="cluster_id"]
-  weights <- full_AP$indicator_code[full_AP$indicator_code=="weights"]
-  data_scoring[,weights] <- as.numeric(data_scoring[[weights]])
+  weights_ap <- full_AP$indicator_code_source[full_AP$indicator_code=="weights"]
+
+  if(length(weights_ap) == 0){
+    data_scoring$weights <- 1
+    weights <- "weights"
+  }else if(length(weights_ap) != 0){
+    weights <- weights_ap
+  }
+
+  cluster_id <- full_AP$indicator_code_source[full_AP$indicator_code %in% c("sampling_id", "cluster_id")]
+
+  if(length(cluster_id) == 0){
+    cluster_id <- NULL
+  }
 
   ### Formating data_scoring
   design_data_scoring <- srvyr::as_survey_design(data_scoring, ids= !!cluster_id, weights = !!weights)%>%
@@ -476,7 +487,7 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
   var_to_analyse <- unique(full_AP$indicator_code[!is.na(full_AP$indicator_code)])
   var_to_analyse <- var_to_analyse[!var_to_analyse %in% c("admin1", "admin2", "admin3","weights", "sampling_id")]
 
-  var_to_analyse_df <- lapply(var_to_analyse, recode_var, data = data, context_AP = context_AP) %>%
+  var_to_analyse_df <- lapply(var_to_analyse, recode_variable, data = data, context_AP = context_AP) %>%
     bind_cols()
 
   from <- full_AP$indicator_code_source
@@ -563,11 +574,11 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
 #'
 #' @examples
 #'
-#' var_recoded <- recode_var(data = WSCprocessing::bfa_msna_2020, var = "critical_handwashing_times", context_AP = WSCprocessing::context_AP)
+#' var_recoded <- recode_variable(data = WSCprocessing::bfa_msna_2020, variable = "critical_handwashing_times", context_AP = WSCprocessing::context_AP)
 #'
 
-recode_var <- function(data, var,context_AP){
-  context_AP_var <- context_AP[context_AP$indicator_code == var, ]
+recode_variable <- function(data, variable, context_AP){
+  context_AP_var <- context_AP[context_AP$indicator_code == variable, ]
   var_source <- unique(context_AP_var$indicator_code_source)
   from <- context_AP_var$choices_name
   to <- context_AP_var$score_recoding
@@ -593,17 +604,17 @@ recode_var <- function(data, var,context_AP){
 
     names(y_filled) <- r3c(names(y_filled), from_noNA, to_noNA)
 
-    y_filled[,var] <- ""
+    y_filled[,variable] <- ""
 
     for(i in 1:nrow(y_filled)){
-      y_filled[i,var] <- paste(names(y_filled[,which(y_filled[i,] == TRUE)]), collapse = " ")
+      y_filled[i,variable] <- paste(names(y_filled[,which(y_filled[i,] == TRUE)]), collapse = " ")
     }
 
-    final_y <- relocate(y_filled, !!var)
+    final_y <- relocate(y_filled, !!variable)
 
   }else{
     y<- data[[var_source]] %>% r3c(.,from,to) %>% as.data.frame()
-    names(y)<-var
+    names(y)<-variable
     final_y <- y %>%
       mutate(across(everything(), ~case_when(is.na(.x) ~ NA_character_,
                                              !.x %in% to ~ "other_choice",
