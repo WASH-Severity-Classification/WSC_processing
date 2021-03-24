@@ -33,15 +33,19 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
                       WIS_sanitation = WSCprocessing::WIS_sanitation,
                       WIS_final = WSCprocessing::WIS_final){
 
-
   agg_AP <- context_AP %>%
-    dplyr::filter(context == !!context & data_source_name == !!data_name)
+    dplyr::filter(context == !!context & data_source_name == !!data_name) %>%
+    dplyr::mutate(
+      indicator_code_source = normalise_string(indicator_code_source)
+    )
+
 
   full_AP <- agg_AP%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")
 
   data_scoring <- score_WIS(data = data, context = context, context_AP = agg_AP, WSC_AP = WSC_AP,
                                  WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final)%>%
+    as_tibble() %>%
     dplyr::mutate(water_score = factor(water_score),
                   sanit_score = factor(sanit_score),
                   score_final = factor(score_final),
@@ -50,9 +54,20 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
                   key_sanit = dplyr::if_else(stringr::str_detect(key_sanit, "^NA"), NA_character_, key_sanit)
     )
 
-  cluster_id <- full_AP$indicator_code[full_AP$indicator_code=="cluster_id"]
-  weights <- full_AP$indicator_code[full_AP$indicator_code=="weights"]
-  data_scoring[,weights] <- as.numeric(data_scoring[,weights])
+  weights_ap <- full_AP$indicator_code_source[full_AP$indicator_code=="weights"]
+
+  if(length(weights_ap) == 0){
+    data_scoring$weights <- 1
+    weights <- "weights"
+  }else if(length(weights_ap) != 0){
+    weights <- weights_ap
+  }
+
+  cluster_id <- full_AP$indicator_code_source[full_AP$indicator_code %in% c("sampling_id", "cluster_id")]
+
+  if(length(cluster_id) == 0){
+    cluster_id <- NULL
+  }
 
   ### Formating data_scoring
   design_data_scoring <- srvyr::as_survey_design(data_scoring, ids= !!cluster_id, weights = !!weights)%>%
@@ -135,7 +150,10 @@ agg_score <- function(data, context, context_AP, WSC_AP, agg_level = "admin2",
 assign_hiAdmin2loAdmin <- function(HiAdmin_df, HiAdmin_df_name,HiAdmin_df_sheet_name, HiAdmin_name, context, context_AP, WSC_AP, LoAdmin_df, LoAdmin_name){
 
   full_AP <- context_AP%>%
-    dplyr::mutate(unique_data_source_name = dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_source_name,data_sheet_name, sep = "_"), TRUE ~ data_source_name))%>%
+    dplyr::mutate(
+      unique_data_source_name = dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_source_name,data_sheet_name, sep = "_"), TRUE ~ data_source_name),
+      indicator_code_source = normalise_string(indicator_code_source)
+    )%>%
     dplyr::filter(context == !!context)%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")%>%
     dplyr::filter(unique_data_source_name == paste(!!HiAdmin_df_name, !!HiAdmin_df_sheet_name, sep = "_"))
@@ -235,8 +253,9 @@ score_var <- function(var, survey_hh_data, agg_level){
 #' @export
 #'
 #' @examples
+#'
 #' area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
-#'          data_name = "bfa_smart_2019",
+#'          data_name = "smart_2019",
 #'          data_sheet_name = "cleaned_data_admin1", data_type = "area",
 #'          agg_level = "admin1", context = "bfa_2020",
 #'          context_AP = WSCprocessing::context_AP,
@@ -262,7 +281,9 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
   data_name_unique <- dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_name, data_sheet_name, sep = "_"), TRUE ~ data_name)
 
   full_AP <- context_AP%>%
-    dplyr::mutate(unique_data_source_name = dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_source_name,data_sheet_name, sep = "_"), TRUE ~ data_source_name))%>%
+    dplyr::mutate(
+      indicator_code_source = normalise_string(indicator_code_source),
+      unique_data_source_name = dplyr::case_when(is.na(data_sheet_name) == FALSE ~ paste(data_source_name,data_sheet_name, sep = "_"), TRUE ~ data_source_name))%>%
     dplyr::filter(context == !!context)%>%
     dplyr::left_join(WSC_AP, by = "indicator_code")%>%
     dplyr::rename(minimal = "None/ minimal", stress = "Stressed", crisis = "Crisis", critical = "Critical", catastrophic = "Catastrophic")%>%
@@ -280,6 +301,14 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
       col == "FALSE" ~ NA_character_,
       TRUE ~ col
     )}))
+
+  var_names <- full_AP %>%
+    select(data_source_name, data_sheet_name, indicator_code, indicator_code_source, context) %>%
+      filter(data_source_name == !!data_name, data_sheet_name == !!data_sheet_name, context == !!context)
+
+  names(data) <- normalise_string(names(data))
+
+  names(data) <- r3c(names(data), var_names$indicator_code_source, var_names$indicator_code)
 
   if(data_type == "area"){
 
@@ -391,3 +420,205 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
   }
 }
 
+#' Aggregate variables at the specified administrative unit
+#'
+#' @param data data.frame containing the data to be aggregated
+#' @param context character string identifying the context to be used in the function call.
+#'    This is to be used if multiple context (geographical or temporal) are being
+#'    analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
+#'    this column can help distinguish the indicators.
+#' @param context_AP data.frame with context specific analysis plan (AP) that links
+#'    the indicators in the WSC AP to the datasets used in the context analysis.
+#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.
+#' @param agg_level character string specifying which column should be used to
+#'    aggregate the data. This is is typically an administrative unit (e.g. province,
+#'    region, departement, admin2, etc.)
+#' @param data_name character string identifying the name of the data frame used
+#'     in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.
+#' @param data_sheet_name character string with the name of the \code{sheet_name}
+#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
+#' @param weights string containing the column name where weights are stored.
+#'
+#' @return data.frame containing the aggregated data according to context_AP and WSC_AP
+#' @export
+#'
+#' @examples
+#'
+#' agg_admin2 <- admin_agg(data = WSCprocessing::bfa_msna_2020, context ="bfa_2020",
+#' context_AP = WSCprocessing::context_AP,  agg_level = "admin2", data_name = "bfa_msna_2020",
+#' weights = "weights_sampling",data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
+#' WSC_AP = WSCprocessing::WSC_AP)
+#'
+
+admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
+                      WSC_AP , weights = NULL,data_sheet_name = NULL){
+
+  if(is.null(data_sheet_name)){
+    full_AP <- context_AP%>%
+      filter(context == !!context)%>%
+      left_join(WSC_AP, by = "indicator_code")%>%
+      filter(data_source_name == data_name, is.na(data_sheet_name),
+             !is.na(indicator_code_source))
+  }else{
+    full_AP <- context_AP%>%
+      filter(context == !!context)%>%
+      left_join(WSC_AP, by = "indicator_code")%>%
+      filter(data_source_name == data_name, data_sheet_name == !!data_sheet_name,
+             !is.na(indicator_code_source))
+  }
+
+  names(data)<-car::recode(names(data),"c('x_uuid','X_uuid','_uuid')='uuid'")
+
+  weights_ap <- full_AP$indicator_code_source[full_AP$indicator_code=="weights"]
+
+  if(is.null(weights) & length(weights_ap) == 0){
+    data$weights <- 1
+    weights <- "weights"
+  }else if(length(weights_ap) != 0){
+    weights <- weights_ap
+  }
+
+  sampling_id <- full_AP$indicator_code_source[full_AP$indicator_code %in% c("sampling_id", "cluster_id")]
+
+  if(length(sampling_id) == 0){
+    sampling_id <- NULL
+  }
+
+  var_to_analyse <- unique(full_AP$indicator_code[!is.na(full_AP$indicator_code)])
+  var_to_analyse <- var_to_analyse[!var_to_analyse %in% c("admin1", "admin2", "admin3","weights", "sampling_id")]
+
+  var_to_analyse_df <- lapply(var_to_analyse, recode_variable, data = data, context_AP = context_AP) %>%
+    bind_cols()
+
+  from <- full_AP$indicator_code_source
+  to <- full_AP$indicator_code
+
+  reduced_data <- data%>%
+    select(weights, sampling_id, !!agg_level) %>%
+    bind_cols(var_to_analyse_df)
+
+  names(data)<-r3c(names(data),from,to)
+
+  design_data <- as_survey(reduced_data ,ids= sampling_id, weights = weights)
+
+  addVars_agg_table <- data.frame(admin2=NA, indicator = NA, choice = NA, value = NA)
+
+  select_multiple_in_data<-auto_detect_select_multiple(design_data$variables)
+  select_multiples_in_var_to_analyse<-var_to_analyse[which(var_to_analyse%in%select_multiple_in_data)]
+
+  if(length(select_multiples_in_var_to_analyse)>0){
+    select_multiples_in_data_with_dot<-paste0(select_multiple_in_data,".")
+    select_multiples_in_given_list_with_dot<-paste0(select_multiples_in_var_to_analyse, ".")
+    vars_selection_helper <- paste0("^(", paste(select_multiples_in_given_list_with_dot, collapse="|"), ")")
+    # vars_selection_helper <- paste0("^(", paste(select_multiples_in_data_with_dot, collapse="|"), ")")
+    select_multiple_logical_names<-select(design_data$variables, matches(vars_selection_helper)) %>%
+      select(-ends_with("_other")) %>% colnames()
+    var_to_analyse_no_concatenated_select_multiple<-var_to_analyse [which(var_to_analyse%in%select_multiple_in_data==FALSE)]
+    var_to_analyse<-c(var_to_analyse_no_concatenated_select_multiple,select_multiple_logical_names)
+  }
+  if(length(select_multiples_in_var_to_analyse)==0){
+    var_to_analyse<-var_to_analyse
+  }
+
+  analyse_var <- function(var_analyse){
+    if(class(design_data$variables[[var_analyse]]) %in% c("factor", "character")){
+      design_data$variables[[var_analyse]] <- factor(design_data$variables[[var_analyse]])
+      addVars_agg_table <- design_data%>%
+        filter(!is.na(!!sym(var_analyse)))%>%
+        group_by(!!sym(agg_level),!!sym(var_analyse))%>%
+        summarise(value= survey_mean(na.rm = TRUE))%>%
+        mutate(indicator = var_analyse)%>%
+        rename(choice = as.character(var_analyse))%>%
+        select(admin2, indicator, choice, value)%>%
+        bind_rows(addVars_agg_table)
+    }else{
+      addVars_agg_table <- design_data%>%
+        filter(!is.na(!!sym(var_analyse)))%>%
+        group_by(admin2)%>%
+        summarise(!!sym(var_analyse):= survey_mean(!!sym(var_analyse), na.rm = TRUE))%>%
+        mutate(admin2 = admin2, indicator = var_analyse,
+               choice = NA, value = !!sym(var_analyse))%>%
+        select(admin2, indicator, choice, value)%>%
+        bind_rows(addVars_agg_table)
+    }
+    return(addVars_agg_table)
+  }
+
+  analysed_var <- lapply(var_to_analyse, analyse_var) %>%
+    bind_rows()
+
+  addVars_agg_table <- analysed_var%>%
+    separate(indicator, into = c("indicator", "choice2"), sep = "\\.")%>%
+    mutate(context = context,
+           choice = case_when(!is.na(choice2)~ as.character(choice2),
+                              TRUE ~ as.character(choice))
+    )%>%
+    select(admin2, indicator, choice, value)%>%
+    mutate(context = context)%>%
+    filter(!is.na(indicator))
+
+  return(addVars_agg_table)
+
+}
+
+#' Recode variable according to the analysis plan
+#'
+#' @param data data.frame containing the data to be recoded
+#' @param var string containing the name of the variable to be recoded. Must be present in \code{context_AP} in column \code{indicator_code}
+#' @param context_AP data.frame with context specific analysis plan (AP) that links
+#'    the indicators in the WSC AP to the datasets used in the context analysis.
+#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.
+#'
+#' @return data.frame with the variable recoded
+#' @export
+#'
+#' @examples
+#'
+#' var_recoded <- recode_variable(data = WSCprocessing::bfa_msna_2020, variable = "critical_handwashing_times", context_AP = WSCprocessing::context_AP)
+#'
+
+recode_variable <- function(data, variable, context_AP){
+  context_AP_var <- context_AP[context_AP$indicator_code == variable, ]
+  var_source <- unique(context_AP_var$indicator_code_source)
+  from <- context_AP_var$choices_name
+  to <- context_AP_var$score_recoding
+  if(sum(is.na(to)) == length(to)){
+    to <- from
+  }
+  sel_mult <- grep("select_multiple", context_AP_var$question_type)
+  # if select multiple for water source recode each option, and take the worse
+  if (length(sel_mult) > 0) {
+    y <- data %>%
+      select(!!var_source)
+
+    fill_choices <- function(df, col, choices_col){
+      df %>%
+        mutate(!!sym(col) := if_else(str_detect(!!sym(choices_col), !!col), TRUE, FALSE))%>%
+        select(!!col)
+    }
+
+    y_filled <- lapply(from, function(x){fill_choices(df = y, col = x, choices_col = var_source)}) %>% bind_cols()
+    y_filled <- y_filled[,!is.na(to)]
+    from_noNA <- from[!is.na(to)]
+    to_noNA <- to[!is.na(to)]
+
+    names(y_filled) <- r3c(names(y_filled), from_noNA, to_noNA)
+
+    y_filled[,variable] <- ""
+
+    for(i in 1:nrow(y_filled)){
+      y_filled[i,variable] <- paste(names(y_filled[,which(y_filled[i,] == TRUE)]), collapse = " ")
+    }
+
+    final_y <- relocate(y_filled, !!variable)
+
+  }else{
+    y<- data[[var_source]] %>% r3c(.,from,to) %>% as.data.frame()
+    names(y)<-variable
+    final_y <- y %>%
+      mutate(across(everything(), ~case_when(is.na(.x) ~ NA_character_,
+                                             !.x %in% to ~ "other_choice",
+                                             TRUE ~ .x)))
+  }
+  return(final_y)
+}
