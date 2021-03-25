@@ -292,6 +292,8 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
   ap_scaled <- full_AP%>%
     dplyr::filter(globally_scaled == TRUE & wash_scoring == FALSE)
 
+
+
   scores_AP <- ap_scaled%>%
     dplyr::select(indicator_code, minimal, stress, crisis, critical, catastrophic)%>%
     dplyr::rowwise()%>%
@@ -309,6 +311,11 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
   names(data) <- normalise_string(names(data))
 
   names(data) <- r3c(names(data), var_names$indicator_code_source, var_names$indicator_code)
+
+  if(sum(names(data) %in% ap_scaled$indicator_code) == 0){
+    warning(paste0(ap_scaled$indicator_code, " does not have a scale to provide the phase of the indicator."))
+    return(NULL)
+  }else{
 
   if(data_type == "area"){
 
@@ -425,6 +432,8 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
       !!sym(agg_level) := normalise_string(!!sym(agg_level))
     ) %>%
     distinct()
+  return(data_scored)
+  }
 
 }
 
@@ -510,10 +519,10 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
 
   if(nrow(reduced_data) == 1){
     addVars_agg_table <- reduced_data %>%
-      mutate(!!sym(agg_level) := !!agg_level,
-             indicator = !!var_to_analyse,
-             choice = NA,
-             value = !!sym(var_to_analyse),
+      select(-weights, -sampling_id) %>%
+      group_by(!!sym(agg_level)) %>%
+      pivot_longer(-!!agg_level, names_to = "indicator", values_to = "value") %>%
+      mutate(choice = NA,
              context = context) %>%
       select(!!agg_level, indicator, choice, value, context)
 
