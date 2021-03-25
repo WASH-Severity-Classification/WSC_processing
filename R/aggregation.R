@@ -319,7 +319,7 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
       dplyr::group_by(!!dplyr::sym(agg_level))%>%
       tidyr::pivot_longer(-!!dplyr::sym(agg_level), names_to = "indicator", values_to = "value")
 
-    area_data_scored <- area_data_AP%>%
+    data_scored <- area_data_AP%>%
       dplyr::left_join(scores_AP, by = c("indicator" = "indicator_code"))%>%
       filter(indicator %in% !!area_indic)%>%
       dplyr::rowwise()%>%
@@ -339,8 +339,6 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
       )%>%
       dplyr::mutate(choice = "Phase", value = score_final, context = "bfa_2020")%>%
       dplyr::select(!!agg_level, indicator, choice, value, context)
-
-    return(area_data_scored)
 
   }
 
@@ -409,15 +407,25 @@ score_df_AP <- function(data = NULL, data_name = NULL, data_sheet_name = NULL, d
       dplyr::filter(!is.na(indicator))
     )
 
-    addVars_agg_table_phases <- lapply(unique(addVars_agg_table$indicator), function(x){
+    data_scored <- lapply(unique(addVars_agg_table$indicator), function(x){
       WSCprocessing::twenty_rule(data = addVars_agg_table, col_score = "indicator", col_label = "choice",
                   name_final_score = x, col_agg = agg_level, col_value = "value")
     })%>%do.call(rbind,.)%>%
-      mutate(choice= "Phase", value = score_final)%>%
-      select(!!agg_level, indicator, choice, value, context)
+      mutate(choice= "Phase", value = score_final,
+             !!sym(agg_level) := normalise_string(!!sym(agg_level)))%>%
+      select(!!agg_level, indicator, choice, value, context) %>%
+      distinct()
 
-    return(addVars_agg_table)
   }
+
+  data_scored <- data_scored[rowSums(is.na(data_scored)) != ncol(data_scored), ]
+
+  data_scored <- data_scored %>%
+    mutate(
+      !!sym(agg_level) := normalise_string(!!sym(agg_level))
+    ) %>%
+    distinct()
+
 }
 
 #' Aggregate variables at the specified administrative unit
@@ -471,7 +479,7 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
 
   weights_ap <- full_AP$indicator_code_source[full_AP$indicator_code=="weights"]
 
-  if(is.null(weights) & length(weights_ap) == 0){
+  if(length(weights_ap) == 0){
     data$weights <- 1
     weights <- "weights"
   }else if(length(weights_ap) != 0){
@@ -487,7 +495,8 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
   var_to_analyse <- unique(full_AP$indicator_code[!is.na(full_AP$indicator_code)])
   var_to_analyse <- var_to_analyse[!var_to_analyse %in% c("admin1", "admin2", "admin3","weights", "sampling_id")]
 
-  var_to_analyse_df <- lapply(var_to_analyse, recode_variable, data = data, context_AP = context_AP) %>%
+  var_to_analyse_df <- lapply(var_to_analyse, recode_variable, data = data,
+                              context_AP = context_AP, data_source_name= data_name) %>%
     bind_cols()
 
   from <- full_AP$indicator_code_source
@@ -499,7 +508,19 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
 
   names(data)<-r3c(names(data),from,to)
 
-  design_data <- as_survey(reduced_data ,ids= sampling_id, weights = weights)
+  if(nrow(reduced_data) == 1){
+    addVars_agg_table <- reduced_data %>%
+      mutate(!!sym(agg_level) := !!agg_level,
+             indicator = !!var_to_analyse,
+             choice = NA,
+             value = !!sym(var_to_analyse),
+             context = context) %>%
+      select(!!agg_level, indicator, choice, value, context)
+
+    return(addVars_agg_table)
+  }
+
+  design_data <- as_survey(reduced_data ,ids= !!sampling_id, weights = !!weights)
 
   addVars_agg_table <- data.frame(admin2=NA, indicator = NA, choice = NA, value = NA)
 
@@ -529,16 +550,16 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
         summarise(value= survey_mean(na.rm = TRUE))%>%
         mutate(indicator = var_analyse)%>%
         rename(choice = as.character(var_analyse))%>%
-        select(admin2, indicator, choice, value)%>%
+        select(!!agg_level, indicator, choice, value)%>%
         bind_rows(addVars_agg_table)
     }else{
       addVars_agg_table <- design_data%>%
         filter(!is.na(!!sym(var_analyse)))%>%
-        group_by(admin2)%>%
+        group_by(!!sym(agg_level))%>%
         summarise(!!sym(var_analyse):= survey_mean(!!sym(var_analyse), na.rm = TRUE))%>%
-        mutate(admin2 = admin2, indicator = var_analyse,
+        mutate(indicator = var_analyse,
                choice = NA, value = !!sym(var_analyse))%>%
-        select(admin2, indicator, choice, value)%>%
+        select(!!agg_level, indicator, choice, value)%>%
         bind_rows(addVars_agg_table)
     }
     return(addVars_agg_table)
@@ -547,15 +568,18 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
   analysed_var <- lapply(var_to_analyse, analyse_var) %>%
     bind_rows()
 
-  addVars_agg_table <- analysed_var%>%
+  analysed_var <- analysed_var[rowSums(is.na(analysed_var)) != ncol(analysed_var), ]
+
+  addVars_agg_table <- suppressWarnings(analysed_var%>%
     separate(indicator, into = c("indicator", "choice2"), sep = "\\.")%>%
     mutate(context = context,
            choice = case_when(!is.na(choice2)~ as.character(choice2),
-                              TRUE ~ as.character(choice))
+                              TRUE ~ as.character(choice)),
+           !!sym(agg_level) := normalise_string(!!sym(agg_level))
     )%>%
-    select(admin2, indicator, choice, value)%>%
+    select(!!agg_level, indicator, choice, value)%>%
     mutate(context = context)%>%
-    filter(!is.na(indicator))
+    filter(!is.na(indicator)))
 
   return(addVars_agg_table)
 
@@ -574,14 +598,19 @@ admin_agg <- function(data, context, context_AP, agg_level = NULL, data_name,
 #'
 #' @examples
 #'
-#' var_recoded <- recode_variable(data = WSCprocessing::bfa_msna_2020, variable = "critical_handwashing_times", context_AP = WSCprocessing::context_AP)
+#' var_recoded <- recode_variable(data = WSCprocessing::bfa_msna_2020,
+#' variable = "critical_handwashing_times", context_AP = WSCprocessing::context_AP,
+#' data_source_name = "bfa_msna_2020")
 #'
 
-recode_variable <- function(data, variable, context_AP){
-  context_AP_var <- context_AP[context_AP$indicator_code == variable, ]
+recode_variable <- function(data, variable, context_AP,data_source_name){
+  context_AP_var <- context_AP[context_AP$indicator_code == variable & context_AP$data_source_name == data_source_name, ]
   var_source <- unique(context_AP_var$indicator_code_source)
   from <- context_AP_var$choices_name
   to <- context_AP_var$score_recoding
+  if(is.na(from)){
+    from <- var_source
+  }
   if(sum(is.na(to)) == length(to)){
     to <- from
   }
@@ -613,12 +642,20 @@ recode_variable <- function(data, variable, context_AP){
     final_y <- relocate(y_filled, !!variable)
 
   }else{
-    y<- data[[var_source]] %>% r3c(.,from,to) %>% as.data.frame()
-    names(y)<-variable
-    final_y <- y %>%
-      mutate(across(everything(), ~case_when(is.na(.x) ~ NA_character_,
-                                             !.x %in% to ~ "other_choice",
-                                             TRUE ~ .x)))
+    y<- data[[var_source]]
+    if(class(y) == "numeric"){
+      final_y <- as.data.frame(y)
+      names(final_y)<-variable
+    }else{
+      y <- y%>% r3c(.,from,to) %>% as.data.frame()
+      names(y)<-variable
+      final_y <- y %>%
+        mutate(across(where(is.character), ~case_when(
+          is.na(.x) ~ NA_character_,
+          !.x %in% to ~ "other_choice",
+          TRUE ~ .x))
+          )
+    }
   }
   return(final_y)
 }
