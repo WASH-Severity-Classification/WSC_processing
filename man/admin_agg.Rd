@@ -48,4 +48,9 @@ Aggregate variables at the specified administrative unit
 }
 \examples{
 
+agg_admin2 <- admin_agg(data = WSCprocessing::bfa_msna_2020, context ="bfa_2020",
+context_AP = WSCprocessing::context_AP,  agg_level = "admin2", data_name = "bfa_msna_2020",
+weights = "weights_sampling",data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
+WSC_AP = WSCprocessing::WSC_AP)
+
 }

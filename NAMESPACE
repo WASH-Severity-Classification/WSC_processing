@@ -3,7 +3,7 @@
 export(admin_agg)
 export(agg_score)
 export(assign_hiAdmin2loAdmin)
-export(recode_var)
+export(recode_variable)
 export(score_WIS)
 export(score_df_AP)
 export(score_var)
