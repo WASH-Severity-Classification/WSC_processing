@@ -38,7 +38,7 @@ You can install the latest version of WSC from
 [github](https://github.com/ElliottMess/WSC) with:
 
 ``` r
-devtools::install_github("ElliottMess/WSC")
+devtools::install_github("WASH-Severity-Classification/WSC_processing")
 ```
 
 ## Main Functions
