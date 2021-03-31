@@ -19,22 +19,26 @@ agg_score(
 \arguments{
 \item{data}{data.frame containing the data to be analysed with the function}
 
-\item{context}{Character string identifying the context to be used in the function call.
-This is to be used if multiple context (geographical or temporal) are being
-analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
-this column can help distinguish the indicators.}
+\item{context}{Character string identifying the context to be used in the
+function call. This is to be used if multiple context (geographical or
+temporal) are being analysed. For instance, if data is used for Burkina
+Faso in 2020 and 2019, this column can help distinguish the indicators.}
 
-\item{context_AP}{data.frame with context specific analysis plan (AP) that links
-the indicators in the WSC AP to the datasets used in the context analysis.
+\item{context_AP}{data.frame with context specific analysis plan (AP) that
+links the indicators in the WSC AP to the datasets used in the context
+analysis.
 See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSCprocessing::context_AP```.}
 
-\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
+\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be
+found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
 
 \item{agg_level}{character string specifying which column should be used to
-aggregate the data. This is is typically an administrative unit (e.g. province,
-region, departement, admin2, etc.)}
+aggregate the data. This is is typically an administrative unit (e.g.
+province, region, departement, admin2, etc.)}
 
-\item{data_name}{character string identifying the name of the data frame used in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.}
+\item{data_name}{character string identifying the name of the data frame used
+in \code{data}. Should be equivalent to the \code{data_source_name}
+called in \code{context_AP}.}
 
 \item{WIS_water}{data.frame with the scoring reference matrix for the Water
 component of the WASH Insecurity Score (WIS)}
@@ -46,13 +50,17 @@ Sanitation component of the WIS}
 score of the WIS}
 }
 \value{
-data.frame containing the aggregated data according to context_AP and WSC_AP
+data.frame containing the aggregated data according to context_AP and
+   WSC_AP
 }
 \description{
 Aggregate scores at specified aggregation level
 }
 \examples{
+\dontrun{
 agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
           data_name = "bfa_msna_2020",
-          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
+          WSC_AP = WSCprocessing::WSC_AP,
+          data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
+}
 }

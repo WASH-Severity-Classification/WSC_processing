@@ -19,45 +19,55 @@ assign_hiAdmin2loAdmin(
 \arguments{
 \item{HiAdmin_df}{data.frame with the higher administrative unit data}
 
-\item{HiAdmin_df_name}{character string with the name of the \code{HiAdmin_df} as is in the \code{data_source_name} column of \code{context_AP}.}
+\item{HiAdmin_df_name}{character string with the name of the
+\code{HiAdmin_df} as is in the \code{data_source_name} column of
+\code{context_AP}.}
 
-\item{HiAdmin_df_sheet_name}{character string with the name of the \code{sheet_name}}
+\item{HiAdmin_df_sheet_name}{character string with the name of the
+\code{sheet_name}}
 
-\item{HiAdmin_name}{character string with the column name of the higher administrative
-unit. Must be identical to the relevant column name in \code{LoAdmin_df} to
-allow cross-reference.}
+\item{HiAdmin_name}{character string with the column name of the higher
+administrative unit. Must be identical to the relevant column name in
+\code{LoAdmin_df} to 4allow cross-reference.}
 
-\item{context}{character string identifying the context to be used in the function call.
+\item{context}{character string identifying the context to be used in the
+function call.
 This is to be used if multiple context (geographical or temporal) are being
 analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
 this column can help distinguish the indicators.}
 
-\item{context_AP}{data.frame with context specific analysis plan (AP) that links
-the indicators in the WSC AP to the datasets used in the context analysis.
+\item{context_AP}{data.frame with context specific analysis plan (AP) that
+links the indicators in the WSC AP to the datasets used in the context
+analysis.
 See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.}
 
-\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
+\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be
+found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here}
+or as an object in the package (```WSCprocessing::WSC_AP```)}
 
-\item{LoAdmin_df}{data.frame with the lower administrative unit data. Can be just a list of lower administrative levels.}
+\item{LoAdmin_df}{data.frame with the lower administrative unit data. Can be
+just a list of lower administrative levels.}
 
-\item{LoAdmin_name}{character string with the column name of the higher administrative
-unit. Must be identical to the relevant column name in \code{LoAdmin_df} to
-allow cross-reference.}
+\item{LoAdmin_name}{character string with the column name of the higher
+administrative unit. Must be identical to the relevant column name in
+\code{LoAdmin_df} to allow cross-reference.}
 }
 \value{
 a data.frame with the aggregated data at a lower administrative level
 }
 \description{
 As data is not always available at the required level, it might be needed to
-assign/input data from a higher administrative unit to a lower one. For instance,
-if a country has three administrative unit: region, province, and communes, this
-function can help to bring data available only at the region-level to a
-province-level data set.
+assign/input data from a higher administrative unit to a lower one. For
+instance,if a country has three administrative unit: region, province, and
+communes, this function can help to bring data available only at the
+region-level to a province-level data set.
 }
 \examples{
-assign_hiAdmin2loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
-                       HiAdmin_df_name = "smart_2019", HiAdmin_df_sheet_name = "cleaned_data_admin1",
-                       context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-                       WSC_AP = WSCprocessing::WSC_AP, LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")
-
+\dontrun{
+assign_hiAdmin2loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1,
+    HiAdmin_name = "admin1", HiAdmin_df_name = "smart_2019",
+    HiAdmin_df_sheet_name = "cleaned_data_admin1", context = "bfa_2020",
+    context_AP = WSCprocessing::context_AP, WSC_AP = WSCprocessing::WSC_AP,
+    LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")
+}
 }

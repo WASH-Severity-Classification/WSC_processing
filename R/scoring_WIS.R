@@ -24,9 +24,11 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCprocessing::context_AP, context = "bfa_2020",
 #'          WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
 #'          WIS_final = WSCprocessing::WIS_final)
+#'}
 #' @md
 score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final){
 
@@ -146,9 +148,14 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
 #'     region, departement, admin2, etc.)
 #'
 #' @return a dataframe with the results of the 20 percent rule.
+#'
+#' @importFrom magrittr `%>%`
+#' @import dplyr
+#'
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' WSI_score_admin2 <- agg_score(data = WSCprocessing::bfa_msna_2020, context = "bfa_2020",
 #'                               context_AP = WSCprocessing::context_AP,
 #'                               data_name = "bfa_msna_2020",
@@ -159,6 +166,7 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
 #' twenty_rule(data = WSI_score_admin2, col_score = "indicator",
 #'             col_label = "choice", name_final_score = "score_final",
 #'             col_agg = "admin2", col_value = "value")
+#'}
 
 twenty_rule <- function(data, col_score, col_label, name_final_score, col_agg, col_value){
 
