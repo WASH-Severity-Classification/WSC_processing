@@ -19,6 +19,8 @@ A data frame with 228 rows and 15 variables:
   \item{data_worksheet_url}{character URL (link) to where the indicator data source is stored and accessible as a spreadsheet}
   \item{data_sheet_name}{character sheet name where the indicator data source is stored and accessible }
   \item{indicator_code_source}{character Indicator code as in the analysed dataset (e.g. the column name)}
+  \item{admin_level}{Most granular level at which the data is available}
+  \item{data_type}{Type of data: either household (coded hh) or area (coded area).}
   \item{question_type}{character Type of questions with choice list linked to it. It should follow the same structure as in \href{https://xlsform.org/en/}{XLSforms}}
   \item{question_label}{character Label of question as in the form (select_one, select_multiple, integer).}
   \item{choices_list}{character Name of choices list, if relevant. This is particularly helpful to link the indicator to an ODK/kobo form with XLSForm. See \href{https://xlsform.org/en/}{here} for more details on XLSforms. }

@@ -22,9 +22,9 @@ data.frame with the variable recoded
 Recode variable according to the analysis plan
 }
 \examples{
-
+\dontrun{
 var_recoded <- recode_variable(data = WSCprocessing::bfa_msna_2020,
 variable = "critical_handwashing_times", context_AP = WSCprocessing::context_AP,
 data_source_name = "bfa_msna_2020")
-
+}
 }

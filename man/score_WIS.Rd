@@ -47,7 +47,9 @@ calculated.
 Score WASH Insecurity Score (WIS)
 }
 \examples{
+\dontrun{
 score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCprocessing::context_AP, context = "bfa_2020",
          WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
          WIS_final = WSCprocessing::WIS_final)
+}
 }
