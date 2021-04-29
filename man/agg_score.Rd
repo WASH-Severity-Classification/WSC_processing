@@ -5,19 +5,29 @@
 \title{Aggregate scores at specified aggregation level}
 \usage{
 agg_score(
-  data,
-  context,
-  context_AP,
-  WSC_AP,
-  agg_level = "admin2",
-  data_name,
+  .data,
+  data_AP,
   WIS_water = WSCprocessing::WIS_water,
   WIS_sanitation = WSCprocessing::WIS_sanitation,
-  WIS_final = WSCprocessing::WIS_final
+  WIS_final = WSCprocessing::WIS_final,
+  ...
 )
 }
 \arguments{
+\item{WIS_water}{data.frame with the scoring reference matrix for the Water
+component of the WASH Insecurity Score (WIS)}
+
+\item{WIS_sanitation}{data.frame with the scoring reference matrix for the
+Sanitation component of the WIS}
+
+\item{WIS_final}{data.frame with the scoring reference matrix for the final
+score of the WIS}
+
 \item{data}{data.frame containing the data to be analysed with the function}
+
+\item{data_name}{character string identifying the name of the data frame used
+in \code{data}. Should be equivalent to the \code{data_source_name}
+called in \code{context_AP}.}
 
 \item{context}{Character string identifying the context to be used in the
 function call. This is to be used if multiple context (geographical or
@@ -35,19 +45,6 @@ found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSw
 \item{agg_level}{character string specifying which column should be used to
 aggregate the data. This is is typically an administrative unit (e.g.
 province, region, departement, admin2, etc.)}
-
-\item{data_name}{character string identifying the name of the data frame used
-in \code{data}. Should be equivalent to the \code{data_source_name}
-called in \code{context_AP}.}
-
-\item{WIS_water}{data.frame with the scoring reference matrix for the Water
-component of the WASH Insecurity Score (WIS)}
-
-\item{WIS_sanitation}{data.frame with the scoring reference matrix for the
-Sanitation component of the WIS}
-
-\item{WIS_final}{data.frame with the scoring reference matrix for the final
-score of the WIS}
 }
 \value{
 data.frame containing the aggregated data according to context_AP and

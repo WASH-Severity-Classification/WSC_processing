@@ -54,13 +54,13 @@ geocode_one_admin <- function(admin,
 
   }else{
 
-  final_geocoded_admins<- geocode_admin_lvl_unnested_renamed %>%
-    as.data.frame() %>%
-    pivot_wider(-long_name, names_from = admin_lvl, values_from = c(short_name)) %>%
-    relocate(!!admin_levels) %>%
-    mutate(name_origin = admin,
-           across(any_of(admin_levels),
-                  ~ trimws(str_remove_all(.x,"Region|Department|Commune|Municipality|Province|Governorate|Urban Community"))))
+    final_geocoded_admins<- geocode_admin_lvl_unnested_renamed %>%
+      as.data.frame() %>%
+      pivot_wider(-long_name, names_from = admin_lvl, values_from = c(short_name)) %>%
+      relocate(!!admin_levels) %>%
+      mutate(name_origin = admin,
+             across(any_of(admin_levels),
+                    ~ trimws(str_remove_all(.x,"Region|Department|Commune|Municipality|Province|Governorate|Urban Community"))))
   }
 
   return(final_geocoded_admins)
@@ -81,10 +81,11 @@ geocode_admin <- function(admin,
 }
 
 find_pcodes_one_admin <- function(admin,
-                              country_iso3 = NULL,
-                              google_api_key,
-                              pcodes_df = NULL,
-                              language = NULL){
+                                  country_iso3 = NULL,
+                                  google_api_key = NULL,
+                                  admin_level = NULL,
+                                  pcodes_df = NULL,
+                                  language = NULL){
 
   if(!is.null(country_iso3) & is.null(pcodes_df)){
     pcodes <- country_pcodes_iso3(country_iso3 = country_iso3)
@@ -103,62 +104,135 @@ find_pcodes_one_admin <- function(admin,
   }) %>% unlist()
 
   normalised_pcodes <- pcodes %>%
-    mutate(across(where(is.character), normalise_string)) %>%
-    select(!!actual_names)
-  names(normalised_pcodes) <- normalise_string(names(normalised_pcodes))
+    mutate(across(matches(actual_names), normalise_string)) %>%
+    rename_with(function(x){
+      paste0("admin",str_extract(x, "[0-9]"))
+    }, matches(actual_names))
 
   normalised_admin <- normalise_string(admin)
+  normalised_admin <- normalised_admin[!is.na(normalised_admin)]
+  normalised_admin <- normalised_admin[!duplicated(normalised_admin)]
 
-  admin_in_df <- which(normalised_pcodes == normalised_admin, arr.ind = TRUE) %>%
-    as_tibble()
+  admin_names <- paste0("admin", pcodes_admin_nbs)
 
-  if(nrow(admin_in_df) ==0){
-    geocodes <- geocode_admin(admin, country_iso3 = country_iso3, google_api_key = google_api_key, language = language)
-    normalised_geocodes_admin <- geocodes %>%
-      select(matches("admin[0-9]$")) %>%
+  if(is.null(admin_level)){
+    admin_in_df <-
+      normalised_pcodes %>%
+      filter(rowSums(across(!!admin_names, ~ grepl(paste0("^",!!normalised_admin, "$"), .x))) > 0) %>%
+      distinct()
+
+    if(nrow(admin_in_df) == 0){
+      admin_in_df[1,] <- NA
+      return(admin_in_df)
+    }else{
+      max_adm_present_col_n <- max(which(normalised_admin == admin_in_df, arr.ind = TRUE)[,2])
+
+      max_adm_present_adm_name <- names(admin_in_df)[max_adm_present_col_n]
+      max_adm_present_adm_num <- as.numeric(str_extract(max_adm_present_adm_name, "[0-9]"))
+
+      if(max_adm_present_adm_num == max(pcodes_admin_nbs)){
+        names_no_match <- paste0("admin", max(pcodes_admin_nbs)+1)
+      }else{
+        names_no_match <- paste0("admin", pcodes_admin_nbs[pcodes_admin_nbs >max_adm_present_adm_num])
+      }
+
+      filtered_pcodes <- admin_in_df %>%
+        mutate(across(matches(names_no_match), ~paste0(NA_character_))) %>%
+        distinct()
+    }
+  }else{
+
+    max_adm_present_adm_num <- as.numeric(str_extract(admin_level, "[0-9]"))
+    max_adm_present_adm_name <- paste0("admin",max_adm_present_adm_num)
+    names_no_match <- paste0("admin", pcodes_admin_nbs[pcodes_admin_nbs >max_adm_present_adm_num])
+
+    filtered_pcodes <-
+      normalised_pcodes %>%
+      filter(!!sym(max_adm_present_adm_name) == admin) %>%
+      mutate(across(matches(names_no_match), ~paste0(NA_character_))) %>%
+      distinct()
+  }
+
+  if(nrow(filtered_pcodes) == 0 & !is.null(google_api_key)){
+    country_codes <- select(countrycode::codelist, iso2c, iso3c)
+    geocodes_no_match <- map_dfr(normalised_admin,
+                                 geocode_admin,
+                                 country_iso3 = country_iso3,
+                                 google_api_key = google_api_key,
+                                 language = language) %>%
+      left_join(country_codes, by = c("admin0" = "iso2c")) %>%
+      mutate(admin0 = iso3c) %>% select(-iso3c) %>%
+      filter(admin0 == country_iso3) %>%
       mutate(across(where(is.character), normalise_string))
 
-    normalised_geocodes_admin <-
-      normalised_geocodes_admin[colSums(is.na(normalised_geocodes_admin)) != nrow(normalised_geocodes_admin)]
+    max_adm_present_col <- geocodes_no_match %>%
+      select(matches("admin[0-9]")) %>%
+      summarise(across(everything(), ~sum(is.na(.x))))
+    max_adm_present_adm_name<-tail(names(max_adm_present_col)[max_adm_present_col == 0],1)
+    max_adm_present_adm_num <- as.numeric(str_extract(max_adm_present_adm_name, "[0-9]"))
 
+    matched_admin <- as.character(geocodes_no_match[,paste0("admin", max_adm_present_adm_num)])
+    names_no_match <- paste0("admin", pcodes_admin_nbs[pcodes_admin_nbs >max_adm_present_adm_num])
 
-    names(normalised_geocodes_admin) <- normalise_string(names(normalised_geocodes_admin))
-    str_norm_geocodes <- as.character(normalised_geocodes_admin)
-    adm_na_nb <- sort(as.numeric(stringr::str_extract(names(normalised_geocodes_admin[str_norm_geocodes == normalised_admin]), "[0-9]")))
-    lowest_adm <- min(adm_na_nb)
-    admin_geocoded <- paste0(names(geocodes[,paste0("admin", lowest_adm)]), "Name")
-
-    filtered_pcodes <- pcodes %>%
-      select(-contains(paste0(!!lowest_adm+1)), -OBJECTID) %>%
-      filter(!!sym(admin_geocoded) == !!admin) %>%
+    filtered_pcodes <- normalised_pcodes %>%
+      rowwise() %>%
+      mutate(distance = diag(adist(admin, !!sym(max_adm_present_adm_name)))/nchar(admin)) %>%
+      filter(!!sym(max_adm_present_adm_name) == matched_admin || distance <=0.1) %>%
+      select(-distance) %>%
+      mutate(across(matches(names_no_match), ~paste0(NA_character_))) %>%
       distinct()
-  }else{
-    lowest_admin_found_nb <- sort(as.numeric(stringr::str_extract(names(normalised_pcodes)[admin_in_df$col], "[0-9]")))
-
-    filtered_pcodes <- pcodes %>%
-      select(-contains(paste0(!!lowest_admin_found_nb+1)))
-    filtered_pcodes <- filtered_pcodes[admin_in_df$row,] %>% distinct()
 
   }
 
   if(nrow(filtered_pcodes) == 0){
+    filtered_pcodes[1,]<-NA
+  }
+
+  min_pcode_col <- paste0(max_adm_present_adm_name, c("pcode","Pcode"), collapse = "|")
+  pcode_col <- names(filtered_pcodes)[grepl(min_pcode_col, names(filtered_pcodes))]
+
+  pcode_cols <- names(pcodes)[grepl("Pcode|pcode", names(pcodes))]
+  pcode_cols_new <- paste0("admin", pcodes_admin_nbs, "pcode")
+
+  final_pcodes <- data.frame(ref_name = admin, filtered_pcodes,
+                             lowest_pcode = filtered_pcodes[,pcode_col],
+                             lowest_admin_name = max_adm_present_adm_name) %>%
+    rename_with(.fn = ~paste0(pcode_cols_new), .cols = all_of(pcode_cols))
+
+  # no_match_pcodes <- names(pcodes)[grepl(paste0("admin[",max_adm_present_adm_num +1,"-9]"), names(pcodes))]
+  #
+  # final_pcodes <- pcodes %>%
+  #   filter(!!sym(pcode_col) == !!filtered_pcodes_final) %>%
+  #   mutate(across(matches(!!no_match_pcodes), ~paste0(NA_character_))) %>%
+  #   distinct()
+
+  if(nrow(final_pcodes) == 0){
     warning(paste0(admin, " could not be found in OCHA's pcodes servers."))
+    if(is.null(google_api_key)){
+      warning("You did not provide a google API key. We could not match the names with google geocoding servers. Please try providing one for better results. See ?google_geocode for more details."
+      )
+    }
+    return(final_pcodes)
   }else{
-    return(filtered_pcodes)
+    return(final_pcodes)
   }
 }
 
 find_pcodes_admin <- function(admin,
-                                  country_iso3 = NULL,
-                                  google_api_key,
-                                  pcodes_df = NULL,
-                                  language = NULL){
+                              country_iso3 = NULL,
+                              google_api_key = NULL,
+                              admin_level = NULL,
+                              pcodes_df = NULL,
+                              language = NULL){
   if(length(admin) == 1){
     result <- find_pcodes_one_admin(admin, country_iso3, google_api_key = google_api_key,pcodes_df = pcodes_df, language = language)
   }else{
-    result <- map(admin, find_pcodes_one_admin, country_iso3 = country_iso3,
-                  google_api_key = google_api_key, pcodes_df = pcodes_df,language = language) %>%
-      bind_rows()
+    if(is.null(pcodes_df)){
+      pcodes_df <-  country_pcodes_iso3(country_iso3 = country_iso3)
+    }
+
+    result <- map_dfr(admin, find_pcodes_one_admin, country_iso3 = country_iso3,
+                      google_api_key = google_api_key, pcodes_df = pcodes_df,language = language)
   }
   return(result)
 
