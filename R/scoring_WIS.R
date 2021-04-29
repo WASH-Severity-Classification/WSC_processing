@@ -29,10 +29,26 @@
 #'          WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
 #'          WIS_final = WSCprocessing::WIS_final)
 #'}
-#' @md
-score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water = WIS_water, WIS_sanitation = WIS_sanitation, WIS_final = WIS_final){
 
-  full_AP <- context_AP%>%
+score_WIS <-
+  function(.data,
+           data_AP,
+           WSC_AP = WSCprocessing::WSC_AP,
+           WIS_water = WSCprocessing::WIS_water,
+           WIS_sanitation = WSCprocessing::WIS_sanitation,
+           WIS_final = WSCprocessing::WIS_final) {
+
+    if(is.null(WSC_AP)){
+      if(is.null(params$WSC_AP)){
+        WSC_AP <- WSCprocessing::WSC_AP
+      }else{
+        WSC_AP <- params$WSC_AP
+      }
+    }
+
+
+  full_AP <- data_AP%>%
+    tidyr::unnest(cols = where(is.list)) %>%
     dplyr::left_join(WSC_AP, by = "indicator_code") %>%
     dplyr::mutate(
       indicator_code_source = normalise_string(indicator_code_source)
@@ -42,89 +58,62 @@ score_WIS<-function(data, context_AP, context = NULL, WSC_AP = WSC_AP, WIS_water
   WIS_AP <- full_AP%>%
     dplyr::filter(wash_scoring == TRUE | indicator_code %in% c("weights", "cluster_id", "admin1", "admin2", "admin3"))
 
-
-  if(is.null(data)){
-    data_url <- unique(WIS_AP$data_worksheet_url)
-    data_sheet <- unique(WIS_AP$data_sheet_name)
-    if(length(data_url)>1){
-      stop("Please organise all data used to score the WIS (see WSCprocessing::WSC_AP$wash_scoring) in one googlesheet. At the moment you have more than URL pointing at your data.")
-    }
-    data <- googlesheets4::read_sheet(data_url, sheet =  data_sheet)
-  }
-
-  data<-data %>%
+  data<-.data %>%
     lapply(rec_missing) %>%
     dplyr::bind_cols() %>%
     as.data.frame()
 
   # harmonize uuid columns
-  names(data)<-recode_var(names(data),"c('x_uuid','X_uuid','_uuid')='uuid'")
-
-  # load the recoding sheet
-  recoding<- WIS_AP %>% as.data.frame
-  recoding<-recoding[recoding$context==context,]
-  # value to recode from
-  from<-recoding$"indicator_code_source"
-  # value to recode to
-  to<-recoding$"indicator_code"
+  names(data)<-recode_var(names(data),"c('x_uuid','X_uuid','_uuid','@_uuid')='uuid'")
 
   # select the column needed
-  datascore<-data[,names(data)%in%c("uuid",unique(recoding$"indicator_code_source"))]
-  # rename with indicator
-  names(datascore)<-r3c(names(datascore),from,to)
+  datascore<-data[,names(data)%in%c("uuid",unique(WIS_AP$"indicator_code"))]
 
-  # recode all the variables
-  scoring<-lapply(names(datascore),
-                  function(x,recoding,data){
-                    index<-recoding$indicator_code==x
-                    recoding<-recoding[index,]
-                    from<-recoding$choices_name
-                    to<-recoding$score_recoding
-                    sel_mult<-grep("select_multiple",recoding$question_type)
-                    # if select multiple for water source recode each option, and take the worse
-                    if(length(sel_mult)>0){
-                      y<-data[[x]] %>% stringr::str_split(" ") %>% lapply(r3c,from,to) %>%
-                        lapply(function(y){if(all(is.na(y))){var<- NA_character_
-                        }else if(any(y=="no_drinking")){var<-"no_drinking"
-                        }else if(any(y=="drinking") & any(y=="cooking") & any(y=="pers_hyg") & any(y=="other_dom")){var<-"drinking_cooking_pers_hyg_other_dom"
-                        }else if(any(y=="drinking") & any(y=="cooking") & any(y=="pers_hyg") & !any(y=="other_dom")){var<-"drinking_cooking_pers_hyg"
-                        }else if(any(y=="drinking") & (any(y=="cooking") | any(y=="pers_hyg"))){var <- "drinking_cooking_OR_pers_hyg"
-                        }else if(any(y=="drinking") & !(any(y=="cooking") | any(y=="pers_hyg"))){var <- "drinking"
-                        }else{var<-"NA"}
-                          return(var)
-                        }) %>% unlist %>% c()%>% as.data.frame()
-                    }else{
-                      y<- data[[x]] %>% r3c(.,from,to) %>% as.data.frame()
-                    }
-                    names(y)<-x
-                    return(y)
-                  },recoding=recoding,data=datascore) %>% do.call(cbind,.)
+  if(sum(grepl("select_multiple", WIS_AP$question_type[WIS_AP$indicator_code == "sufficiency_of_water"])) > 0){
+    datascore[["sufficiency_of_water"]] <- datascore[["sufficiency_of_water"]] %>%
+      stringr::str_split(" ") %>%
+      lapply(function(y){if(all(is.na(y))){var<- NA_character_
+      }else if(any(y=="no_drinking")){var<-"no_drinking"
+      }else if(any(y=="drinking") & any(y=="cooking") & any(y=="pers_hyg") & any(y=="other_dom")){var<-"drinking_cooking_pers_hyg_other_dom"
+      }else if(any(y=="drinking") & any(y=="cooking") & any(y=="pers_hyg") & !any(y=="other_dom")){var<-"drinking_cooking_pers_hyg"
+      }else if(any(y=="drinking") & (any(y=="cooking") | any(y=="pers_hyg"))){var <- "drinking_cooking_OR_pers_hyg"
+      }else if(any(y=="drinking") & !(any(y=="cooking") | any(y=="pers_hyg"))){var <- "drinking"
+      }else{var<-"NA"}
+        return(var)
+      }) %>% unlist
+  }
 
   # concatenate water source and distance
-  scoring$water_source_dist<-ifelse(
-    scoring$water_source=="improved",
-    paste0(scoring$water_source,"_",scoring$distance_to_water_source),
-    scoring$water_source)
+  datascore$water_source_dist<-ifelse(
+    datascore$water_source=="improved",
+    paste0(datascore$water_source,"_",datascore$distance_to_water_source),
+    datascore$water_source)
 
   # create a key for a lookup
-  scoring$key_water<-paste0(scoring$sufficiency_of_water,"-/-",scoring$water_source_dist)
-  scoring$key_sanit<-paste0(scoring$type_of_sanitation_facility,"-/-",scoring$sanitation_facility_sharing,"-/-",scoring$access_to_soap)
+  datascore$key_water<-paste0(datascore$sufficiency_of_water,"-/-",datascore$water_source_dist)
+  datascore$key_sanit<-paste0(datascore$type_of_sanitation_facility,"-/-",datascore$sanitation_facility_sharing,"-/-",datascore$access_to_soap)
+  # # recode water scores from the excel datascore table
+  WIS_water_recoding <- select(WIS_water, key_water, score_water)
 
-  # recode water scores from the excel scoring table
-  scoring$water_score<- suppressWarnings(r3c(scoring$key_water,WIS_water$key_water,WIS_water$score_water)%>%
-    as.numeric())
+  datascore$water_score<- ifelse(is.na(datascore$key_water),
+                                 NA_integer_,
+                                 WIS_water$score_water[match(datascore$key_water, WIS_water$key_water)])
 
-  # recode sanit scores from the excel scoring table
-  scoring$sanit_score<- suppressWarnings(r3c(scoring$key_sanit,WIS_sanitation$key_sanit,WIS_sanitation$score_sanit)%>%
-    as.numeric())
+  # recode sanit scores from the excel datascore table
+  datascore$sanit_score<- ifelse(is.na(datascore$key_sanit),
+                                 NA_integer_,
+                                 WIS_sanitation$score_sanit[match(datascore$key_sanit, WIS_sanitation$key_sanit)])
 
-  # recode final scores from the excel scoring table
-  scoring$key_score<-paste0(scoring$water_score,"-/-",scoring$sanit_score)
-  scoring$score<- suppressWarnings(r3c(scoring$key_score,WIS_final$key_score,WIS_final$score))
-  scoring$score_final<- suppressWarnings(scoring$score%>%
-    as.numeric())
 
-  return(scoring)
+  # recode final scores from the excel datascore table
+  datascore$key_score<-paste0(datascore$water_score,"-/-",datascore$sanit_score)
+  datascore$score<- ifelse(is.na(datascore$key_score),
+                           NA_integer_,
+                           WIS_final$score[match(datascore$key_score, WIS_final$key_score)])
+
+  datascore$score_finale<- as.numeric(datascore$score)
+
+  return(datascore)
 }
 
 #' @title Function to determine severity in a specific area based on the 20 percent rule.
@@ -190,7 +179,7 @@ twenty_rule <- function(data, col_score, col_label, name_final_score, col_agg, c
         sum(score_5, score_4,score_3,score_2, na.rm = T) >= 0.2 ~ "2",
         sum(score_5, score_4,score_3,score_2,score_1, na.rm = T) >= 0.2 ~ "1",
         TRUE ~ NA_character_
-    )))%>%
+      )))%>%
     dplyr::relocate(c(score_1, score_2, score_3, score_4, score_5,score_final), .after=last_col())
 }
 

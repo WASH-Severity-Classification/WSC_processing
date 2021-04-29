@@ -4,24 +4,26 @@ rec_missing<-function(x,missings=c('N/A','n/a',999,888,' ','(vide)','d/m','','NA
   return(x)
 }
 
-r3c<-function(vec,name,label){
-  name <-  name %>% as.character()
-  vec <-  vec %>% as.character()
-  label <-  label %>% as.character()
+rename_vec<-function(vec,from,to){
+  from <-  as.character(from)
+  vec <-  as.character(vec)
+  to <-  as.character(to)
 
-  if(length(name)==length(label)){
-    for (i in 1:length(name)){
-      cond<-which(vec%in%name[i])
+  if(length(from)==length(to)){
+    for (i in 1:length(from)){
+      cond<-which(vec%in%from[i])
       if(length(cond)>0){
-        vec[cond]<-label[i]
+        if(sum(vec[cond] == from[i]) == length(vec[cond])|sum(is.na(vec[cond]))==length(vec[cond])){
+          vec[cond]<-to[i]
+        }
+      if(length(grep(paste0(from[i], "\\."), vec)) > 0){
+        vec[grep(paste0(from[i], "\\."), vec)] <- gsub(paste0(from[i], "\\."), paste0(to[i],"\\."), vec[grep(paste0(from[i], "\\."), vec)])
       }
-      if(length(grep(paste0(name[i], "\\."), vec)) > 0){
-        vec[grep(paste0(name[i], "\\."), vec)] <- gsub(paste0(name[i], "\\."), paste0(label[i],"\\."), vec[grep(paste0(name[i], "\\."), vec)])
       }
     }
     return(vec)
   } else {
-    print("y and z must have the length")
+    print("from and to must have the same length")
   }
 }
 
@@ -132,3 +134,85 @@ normalise_string <- function(string){
 
   return(remove_other)
 }
+
+
+read_df <- function(ss, sheet, data_source_name, ...) {
+  if (grepl("https://docs.google.com/spreadsheets", ss)) {
+    result <- googlesheets4::read_sheet(ss,
+                              sheet,
+                              .name_repair = ~ vctrs::vec_as_names(..., repair = "unique", quiet = TRUE))
+  } else{
+    readable_files <-
+      fs::dir_ls(".", recurse = TRUE, glob = "*.csv$|*.xls$|*.xlsx$|.sav$")
+    readable_files_source_name <-
+      readable_files[grepl(data_source_name, readable_files)]
+    if (length(readable_files_source_name) > 1) {
+      warning(
+        paste0(
+          data_source_name,
+          " has more than one file that is readable (csv, sav, xls, or xlsx) and contains the name of the data source.
+                           Please make sure to specify an URL to the google sheet contain"
+        )
+      )
+      result <- NULL
+    } else {
+      if (length(readable_files_source_name) == 0) {
+        warning(
+          paste0(
+            data_source_name,
+            " - ",
+            sheet,
+            " could not be loaded. ",
+            "No worksheet or file containing the source name could be found in the working directory."
+          )
+        )
+        return(NULL)
+      } else {
+        ss <- readable_files_source_name
+      }
+    }
+
+    if (fs::file_exists(ss)) {
+      if (sum(grepl("*.csv$", readable_files_source_name)) != 0) {
+        result <- readr::read_csv(readable_files_source_name)
+      } else if(sum(grepl("*.sav$", readable_files_source_name)) != 0) {
+        rename_select_mulitple_spss <- function(data, var){
+          label_choice_dot <- gsub("\\/", "\\.", attributes(data[[var]])$label)
+          if(nchar(label_choice_dot) >= 64){
+            label_choice_dot <- var
+          }
+          index <- grep(paste0(var,"$"), names(data))
+          names(data)[[index]] <- label_choice_dot
+        }
+
+        result <- haven::read_sav(readable_files_source_name, user_na = TRUE) %>%
+          haven::as_factor()
+        result <- lapply(result, rec_missing) %>%
+          bind_cols() %>%
+          as_tibble()
+
+        names(result)[grepl("\\.", names(result))] <- map_chr(names(result)[grepl("\\.", names(result))], ~rename_select_mulitple_spss(result, .x))
+        return(result)
+      }else if (sum(grepl("*.xls$|*.xlsx$", readable_files_source_name)) !=
+                 0) {
+        result <- readxl::read_excel(readable_files_source_name, sheet = sheet)
+      } else{
+        warning(
+          paste0(
+            ss,
+            " could not be read. only .csv, .sav, .xls, and .xlsx are supported at the moment"
+          )
+        )
+        return(NULL)
+      }
+    } else{
+      warning(paste0(
+        ss,
+        " could not be found in the working directory and sub-folders."
+      ))
+      return(NULL)
+    }
+
+  }
+}
+
