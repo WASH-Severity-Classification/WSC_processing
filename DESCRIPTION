@@ -1,7 +1,7 @@
 Package: WSCprocessing
 Type: Package
 Title: Process data for the WASH Severity Classification (WSC)
-Version: 0.5.1
+Version: 0.6.1
 Authors@R: person("Elliott", "Messeiller", email = "elliott.messeiller@impact-initiatives.org",
                   role = c("aut", "cre"))
 Description: The WASH Severity Classification (WSC) is a new interagency global initiative

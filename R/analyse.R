@@ -69,66 +69,91 @@ analyse_country <- function(context_AP,
                             admin_analysis,
                             country_iso3,
                             pop_df = NULL,
-                            google_api_key = NULL, pcodes_df = NULL, ...){
+                            google_api_key = NULL,
+                            pcodes_df = NULL,
+                            ...) {
   params <- list(...)
 
-  if(!is.null(pop_df) & sum(!c("admin1", "admin2", "total_pop") %in% names(pop_df))>0){
+  if (!is.null(pop_df) &
+      sum(!c("admin1", "admin2", "total_pop") %in% names(pop_df)) > 0) {
     stop("Missing necessary columns in pop_df.")
   }
-  if(!is.null(admin_analysis)){
-    if(!admin_analysis %in% c("admin1", "admin2", "admin3")){
+  if (!is.null(admin_analysis)) {
+    if (!admin_analysis %in% c("admin1", "admin2", "admin3")) {
       stop("admin_level must either NULL or one of 'admin1', 'admin2', or 'admin3'")
     }
   }
 
-  if(is.null(pcodes_df)){
+  if (is.null(pcodes_df)) {
     pcodes_df <-  country_pcodes_iso3(country_iso3 = country_iso3)
   }
 
-  result <- analyse_DAP(context_AP = context_AP, country_iso3 = country_iso3,
-                        google_api_key = google_api_key, pcodes_df = pcodes_df)
+  result <-
+    analyse_DAP(
+      context_AP = context_AP,
+      country_iso3 = country_iso3,
+      google_api_key = google_api_key,
+      pcodes_df = pcodes_df
+    )
 
-  if(nrow(result)==1 & sum(rowSums(is.na(result)) == ncol(result))){
+  if (nrow(result) == 1 &
+      sum(rowSums(is.na(result)) == ncol(result))) {
     return(NULL)
   }
 
   final_result <- result %>%
-    mutate(lowest_admin_n = case_when(lowest_admin == admin3 ~ 3,
-                                         lowest_admin == admin2 ~ 2,
-                                         lowest_admin == admin1 ~ 1))
+    mutate(
+      lowest_admin_n = case_when(
+        lowest_admin == admin3 ~ 3,
+        lowest_admin == admin2 ~ 2,
+        lowest_admin == admin1 ~ 1
+      )
+    )
 
-  if(is.null(pcodes_df)){
+  if (is.null(pcodes_df)) {
     pcodes_df <-  country_pcodes_iso3(country_iso3 = country_iso3)
   }
 
-  admin_present_result <-  names(final_result)[grep("admin[0-3]$", names(final_result))]
-  admin_present_result_n <- as.numeric(str_extract(admin_present_result, "[0-9]"))
-  admin_analysis_n <- as.numeric(str_extract(admin_analysis, "[0-9]"))
+  admin_present_result <-
+    names(final_result)[grep("admin[0-3]$", names(final_result))]
+  admin_present_result_n <-
+    as.numeric(str_extract(admin_present_result, "[0-9]"))
+  admin_analysis_n <-
+    as.numeric(str_extract(admin_analysis, "[0-9]"))
 
-  if(is.null(pop_df)){
-    pop_df <- get_pop_df(country_iso3 = country_iso3,
-                         admin_level = NULL,
-                         google_api_key = google_api_key,
-                         pcodes_df = pcodes_df
-                         )
+  if (is.null(pop_df)) {
+    pop_df <- get_pop_df(
+      country_iso3 = country_iso3,
+      admin_level = NULL,
+      google_api_key = google_api_key,
+      pcodes_df = pcodes_df
+    )
   }
 
   final_result_need_agg_high <- final_result %>%
-   filter(lowest_admin_n < admin_analysis_n) %>%
-   split(.$source)
+    filter(lowest_admin_n < admin_analysis_n) %>%
+    split(.$source)
 
   final_result_final <- final_result %>%
     filter(lowest_admin_n == admin_analysis_n)
 
-  if(length(final_result_need_agg_high)>0){
-    high2low <- map2_dfr(final_result_need_agg_high,names(final_result_need_agg_high), ~assign_result_high2low(
-      high_df = .x, high_df_name = .y, low_admin = admin_analysis, pop_df = pop_df,
-      context_AP = context_AP
-    )) %>%
+  if (length(final_result_need_agg_high) > 0) {
+    high2low <-
+      map2_dfr(
+        final_result_need_agg_high,
+        names(final_result_need_agg_high),
+        ~ assign_result_high2low(
+          high_df = .x,
+          high_df_name = .y,
+          low_admin = admin_analysis,
+          pop_df = pop_df,
+          context_AP = context_AP
+        )
+      ) %>%
       mutate(value = as.character(value))
-    if(nrow(final_result_final)>0){
-    final_result_final <- bind_rows(final_result_final, high2low)
-    }else{
+    if (nrow(final_result_final) > 0) {
+      final_result_final <- bind_rows(final_result_final, high2low)
+    } else{
       final_result_final <- high2low
     }
   }
@@ -137,42 +162,55 @@ analyse_country <- function(context_AP,
     filter(lowest_admin_n > admin_analysis_n) %>%
     split(.$source)
 
-  if(length(final_result_need_agg_low)>0){
-    low2high <- map2_dfr(final_result_need_agg_low,names(final_result_need_agg_low), ~assign_result_low2high(
-      low_df = .x, low_df_name = .y, high_admin = admin_analysis, pop_df = pop_df,
-      context_AP = context_AP
-    )) %>%
+  if (length(final_result_need_agg_low) > 0) {
+    low2high <-
+      map2_dfr(
+        final_result_need_agg_low,
+        names(final_result_need_agg_low),
+        ~ assign_result_low2high(
+          low_df = .x,
+          low_df_name = .y,
+          high_admin = admin_analysis,
+          pop_df = pop_df,
+          context_AP = context_AP
+        )
+      ) %>%
       mutate(value = as.character(value))
-    if(nrow(final_result_final)>0){
+    if (nrow(final_result_final) > 0) {
       final_result_final <- bind_rows(final_result_final, low2high)
-    }else{
+    } else{
       final_result_final <- low2high
     }
   }
 
-  final_result_final <- final_result_final[rowSums(is.na(final_result_final)) != ncol(final_result_final),]
+  final_result_final <-
+    final_result_final[rowSums(is.na(final_result_final)) != ncol(final_result_final),]
 
   double_indic <- final_result_final %>%
     group_by(!!sym(admin_analysis), context, indicator, choice, source) %>%
     summarise(n = n(), .groups = "drop") %>%
     filter(n > 1)
 
-  if(nrow(double_indic) > 0){
-    warning("Some indicators are duplicated: some have more than one value per
+  if (nrow(double_indic) > 0) {
+    warning(
+      "Some indicators are duplicated: some have more than one value per
             unique combination of admin unit, context, choice, and source.
             Please verify that this is normal. This will pose problems in the
-            worksheets ")
+            worksheets "
+    )
     print(double_indic)
   }
 
   label_indicator <- WSC_AP %>%
-    select(Indicator,Indicateur, indicator_code)
+    select(Indicator, Indicateur, indicator_code)
 
   final_result_final_labelled <- final_result_final %>%
-    left_join(label_indicator, by = c("indicator"="indicator_code")) %>%
-    mutate(indicator_choice = paste0(Indicator, "_", choice),
-           indicateur_choice = paste0(Indicateur, "_", choice),
-           indicator_code_choice = paste0(indicator,choice))
+    left_join(label_indicator, by = c("indicator" = "indicator_code")) %>%
+    mutate(
+      indicator_choice = paste0(Indicator, "_", choice),
+      indicateur_choice = paste0(Indicateur, "_", choice),
+      indicator_code_choice = paste0(indicator, choice)
+    )
   return(final_result_final_labelled)
 }
 
@@ -220,97 +258,142 @@ analyse_country <- function(context_AP,
 #' result <- analyse_DAP(context_AP, country_iso3 = "BFA")
 #'
 #' }
-analyse_DAP <- function(context_AP, country_iso3,google_api_key = NULL, pcodes_df = NULL, ...){
+analyse_DAP <-
+  function(context_AP,
+           country_iso3,
+           google_api_key = NULL,
+           pcodes_df = NULL,
+           ...) {
+    params <- list(...)
 
-  params <- list(...)
-
-  if (is.null(params$WSC_AP)){
-    WSC_AP <- WSCprocessing::WSC_AP
-    params$WSC_AP <- WSCprocessing::WSC_AP
-  }
-
-  generic_context_AP <- WSCprocessing::context_AP
-
-  if(sum(!names(context_AP) %in% names(generic_context_AP)) > 0){
-    stop("The column names in your analysis plan (AP) do not match the template. Please check ?WSCprocessing::context_AP for more information")
-  }
-
-  data_sources <- unique(context_AP$data_source_name)[!is.na(unique(context_AP$data_source_name))]
-
-  source_analysed <- map(data_sources, analyse_source_all_sheets, context_AP = context_AP, WSC_AP = WSC_AP,
-                         params)
-
-  source_analysed_combined <- map_dfr(source_analysed, function(x){
-    if(sum(grepl("Core variables are missing.$", x[[1]])) == 0 ){
-      return(x)
+    if (is.null(params$WSC_AP)) {
+      WSC_AP <- WSCprocessing::WSC_AP
+      params$WSC_AP <- WSCprocessing::WSC_AP
     }
-  })
 
-  if(nrow(source_analysed_combined)==1 & sum(rowSums(is.na(source_analysed_combined)) == ncol(source_analysed_combined))>0 ){
-    warning(paste0("No data could be read"))
-    return(source_analysed_combined)
-  }
-  admin_cols <- c(admin0 = NA_character_, admin1 = NA_character_,
-                  admin2 = NA_character_, admin3 = NA_character_)
-  admin_lvls <- paste0("admin", 0:3)
+    generic_context_AP <- WSCprocessing::context_AP
 
-  source_analysed_relocated <- source_analysed_combined %>%
-    tibble::add_column(!!!admin_cols[setdiff(names(admin_cols), names(source_analysed_combined))]) %>%
-    mutate(across(where(is.factor), as.character)) %>%
-    relocate(!!admin_lvls) %>%
-    mutate(lowest_admin = case_when(!is.na(admin3) ~ admin3,
-                                    !is.na(admin2) ~ admin2,
-                                    !is.na(admin1) ~ admin1),
-           ref_name = paste(admin3, admin2, admin1)
+    if (sum(!names(context_AP) %in% names(generic_context_AP)) > 0) {
+      stop(
+        "The column names in your analysis plan (AP) do not match the template. Please check ?WSCprocessing::context_AP for more information"
+      )
+    }
+
+    data_sources <-
+      unique(context_AP$data_source_name)[!is.na(unique(context_AP$data_source_name))]
+
+    source_analysed <-
+      map(
+        data_sources,
+        analyse_source_all_sheets,
+        context_AP = context_AP,
+        WSC_AP = WSC_AP,
+        params
+      )
+
+    source_analysed_combined <-
+      map_dfr(source_analysed, function(x) {
+        if (sum(grepl("Core variables are missing.$", x[[1]])) == 0) {
+          return(x)
+        }
+      })
+
+    if (nrow(source_analysed_combined) == 1 &
+        sum(rowSums(is.na(source_analysed_combined)) == ncol(source_analysed_combined)) >
+        0) {
+      warning(paste0("No data could be read"))
+      return(source_analysed_combined)
+    }
+    admin_cols <- c(
+      admin0 = NA_character_,
+      admin1 = NA_character_,
+      admin2 = NA_character_,
+      admin3 = NA_character_
+    )
+    admin_lvls <- paste0("admin", 0:3)
+
+    source_analysed_relocated <- source_analysed_combined %>%
+      tibble::add_column(!!!admin_cols[setdiff(names(admin_cols), names(source_analysed_combined))]) %>%
+      mutate(across(where(is.factor), as.character)) %>%
+      relocate(!!admin_lvls) %>%
+      mutate(
+        lowest_admin = case_when(
+          !is.na(admin3) ~ admin3,
+          !is.na(admin2) ~ admin2,
+          !is.na(admin1) ~ admin1
+        ),
+        ref_name = paste(admin3, admin2, admin1)
+      )
+
+    source_analysed_relocated$ref_name <-
+      trimws(gsub("NA |NA$", "", source_analysed_relocated$ref_name))
+    source_analysed_relocated <-
+      source_analysed_relocated[source_analysed_relocated$ref_name != "",]
+
+    if (!is.null(google_api_key)) {
+      admin_present <- unique(source_analysed_relocated$ref_name)
+    } else{
+      admin_present <- unique(source_analysed_relocated$lowest_admin)
+    }
+
+    source_analysed_relocated <-
+      select(source_analysed_relocated, -any_of(paste0("admin", rep(0:3, 1)))) %>%
+      mutate(ref_name = case_when(str_count(ref_name) > 1 ~ word(ref_name, 1),
+                                  TRUE ~ ref_name))
+
+    if (is.null(pcodes_df)) {
+      pcodes_df <-  country_pcodes_iso3(country_iso3 = country_iso3)
+    }
+
+    pcode_cols <- c(
+      admin_cols,
+      admin0pcode = NA_character_,
+      admin1pcode = NA_character_,
+      admin2pcode = NA_character_,
+      admin3pcode = NA_character_
     )
 
-  source_analysed_relocated$ref_name <- trimws(gsub("NA |NA$", "", source_analysed_relocated$ref_name))
-  source_analysed_relocated <- source_analysed_relocated[source_analysed_relocated$ref_name != "",]
+    admin_pcoded <- find_pcodes_admin(
+      admin_present,
+      country_iso3 = country_iso3,
+      admin_level = NULL,
+      google_api_key = google_api_key,
+      pcodes_df = pcodes_df
+    ) %>%
+      mutate(lowest_pcode = case_when(
+        grepl("^c\\(\"", lowest_pcode) ~ NA_character_,
+        TRUE ~ lowest_pcode
+      )) %>%
+      tibble::add_column(!!!pcode_cols[setdiff(names(pcode_cols), names(.data))]) %>%
+      select(admin1,
+             admin1pcode,
+             admin2,
+             admin2pcode,
+             admin3,
+             admin3pcode,
+             ref_name)
 
-  if(!is.null(google_api_key)){
-    admin_present <- unique(source_analysed_relocated$ref_name)
-  }else{
-    admin_present <- unique(source_analysed_relocated$lowest_admin)
+    if (!"choice" %in% names(source_analysed_relocated)) {
+      source_analysed_relocated$choice <- NA
+    }
+
+
+    source_analysed_final <- admin_pcoded %>%
+      left_join(source_analysed_relocated, by = c("ref_name" = "ref_name")) %>%
+      select(
+        paste0("admin", rep(1:3, 1)),
+        indicator,
+        choice,
+        value,
+        context,
+        source,
+        paste0("admin", rep(1:3, 1), "pcode"),
+        lowest_admin
+      ) %>%
+      filter(!is.na(indicator))
+
+    return(source_analysed_final)
   }
-
-  source_analysed_relocated <- select(source_analysed_relocated,
-                                      -any_of(paste0("admin",rep(0:3,1)))) %>%
-    mutate(ref_name = case_when(str_count(ref_name) > 1 ~ word(ref_name,1),
-                                TRUE ~ ref_name))
-
-  if(is.null(pcodes_df)){
-    pcodes_df <-  country_pcodes_iso3(country_iso3 = country_iso3)
-  }
-
-  pcode_cols <- c(admin_cols, admin0pcode = NA_character_,
-                  admin1pcode = NA_character_,
-                  admin2pcode = NA_character_,
-                  admin3pcode = NA_character_)
-
-  admin_pcoded <- find_pcodes_admin(admin_present,
-                                    country_iso3 = country_iso3,
-                                    admin_level = NULL,
-                                    google_api_key = google_api_key,
-                                    pcodes_df = pcodes_df) %>%
-    mutate(lowest_pcode = case_when(grepl( "^c\\(\"", lowest_pcode) ~ NA_character_,
-                                    TRUE ~ lowest_pcode)) %>%
-    tibble::add_column(!!!pcode_cols[setdiff(names(pcode_cols), names(.data))]) %>%
-    select(admin1, admin1pcode, admin2,admin2pcode, admin3,admin3pcode, ref_name)
-
-  if(!"choice" %in% names(source_analysed_relocated)){
-    source_analysed_relocated$choice <- NA
-  }
-
-
-  source_analysed_final <- admin_pcoded %>%
-    left_join(source_analysed_relocated, by = c("ref_name" = "ref_name")) %>%
-    select(paste0("admin", rep(1:3,1)), indicator, choice, value,  context,
-           source,
-           paste0("admin", rep(1:3,1),"pcode"), lowest_admin) %>%
-    filter(!is.na(indicator))
-
-  return(source_analysed_final)
-}
 
 #' Analyse all data sheets in a data source
 #'
@@ -339,30 +422,42 @@ analyse_DAP <- function(context_AP, country_iso3,google_api_key = NULL, pcodes_d
 #' }
 
 analyse_source_all_sheets <-
-  function(source_name, context_AP, WSC_AP = WSCprocessing::WSC_AP, ...) {
-
+  function(source_name,
+           context_AP,
+           WSC_AP = WSCprocessing::WSC_AP,
+           ...) {
     params <- list(...)
 
-    sheets_name <- unique(context_AP$data_sheet_name[context_AP$data_source_name == source_name])
+    sheets_name <-
+      unique(context_AP$data_sheet_name[context_AP$data_source_name == source_name])
     sheets_name <- sheets_name[!is.na(sheets_name)]
 
-    if(length(sheets_name) == 0){
+    if (length(sheets_name) == 0) {
       sheets_name <- NA
       analysis_param <- context_AP %>%
         filter(data_source_name == source_name)
     }
 
     analysis_param <- map_dfr(sheets_name,
-                          get_dataAP, source_name = source_name, context_AP = context_AP)
+                              get_dataAP,
+                              source_name = source_name,
+                              context_AP = context_AP)
 
     check_analysis_param <- analysis_param %>%
-      dplyr::group_by(data_sheet_name,data_worksheet_url) %>%
-      dplyr::summarise(n = dplyr::n(),.groups = "drop")
+      dplyr::group_by(data_sheet_name, data_worksheet_url) %>%
+      dplyr::summarise(n = dplyr::n(), .groups = "drop")
 
-    if(sum(check_analysis_param$n > 1)>0){
-      result_test <- dplyr::filter(check_analysis_param, n >1)
-      stop(paste0(source_name, " - ", result_test$data_sheet_name,"  has one combination of worksheet/sheet where there is multiple combinaison of admin_level, data_type, or context.
-                  Please make sure that there is one type of data from one type of administrative units in your context_AP."))
+    if (sum(check_analysis_param$n > 1) > 0) {
+      result_test <- dplyr::filter(check_analysis_param, n > 1)
+      stop(
+        paste0(
+          source_name,
+          " - ",
+          result_test$data_sheet_name,
+          "  has one combination of worksheet/sheet where there is multiple combinaison of admin_level, data_type, or context.
+                  Please make sure that there is one type of data from one type of administrative units in your context_AP."
+        )
+      )
     }
 
     sheets_list <- analysis_param %>%
@@ -370,21 +465,36 @@ analyse_source_all_sheets <-
       dplyr::select(ss, sheet, data_source_name) %>%
       purrr::pmap(read_df)
 
-    if (length(sheets_list) == 0 | (sum(map(sheets_list, is.null) %>% unlist()) == length(sheets_list))) {
+    if (length(sheets_list) == 0 |
+        (sum(map(sheets_list, is.null) %>% unlist()) == length(sheets_list))) {
       warning(
         paste0(
           source_name,
           " : Impossible to read the dataset, please check the information in context_AP"
         )
       )
-      result <- tibble(admin1= NA, indicator = NA, choice = NA, value = NA, context = NA)
+      result <-
+        tibble(
+          admin1 = NA,
+          indicator = NA,
+          choice = NA,
+          value = NA,
+          context = NA
+        )
       return(result)
     }
 
-    analysis_param_list <- split(analysis_param, seq(nrow(analysis_param)))
+    analysis_param_list <-
+      split(analysis_param, seq(nrow(analysis_param)))
 
-    scored_data <- pmap_dfr(list(data_AP = analysis_param_list, data = sheets_list),
-                            ~with(list(...),analyse_data(data, data_AP, WSC_AP = WSC_AP, params)))
+    scored_data <-
+      pmap_dfr(
+        list(data_AP = analysis_param_list, data = sheets_list),
+        ~ with(
+          list(...),
+          analyse_data(data, data_AP, WSC_AP = WSC_AP, params)
+        )
+      )
 
     return(scored_data)
   }
@@ -439,41 +549,65 @@ analyse_source_all_sheets <-
 #' results <- analyse_data(df, this_dataAP)
 #' }
 
-analyse_data <- function(data, data_AP, ...){
-
+analyse_data <- function(data, data_AP, ...) {
   params <- list(...)
 
-  if(is.list(data)) data <- as.data.frame(data)
+  if (is.list(data))
+    data <- as.data.frame(data)
 
-  names_param <- c("data_sheet_name", "data_worksheet_url", "admin_level",
-                   "data_type", "context","indicator_code_source",
-                   "indicator_code", "choices_name", "score_recoding", "question_type")
+  names_param <-
+    c(
+      "data_sheet_name",
+      "data_worksheet_url",
+      "admin_level",
+      "data_type",
+      "context",
+      "indicator_code_source",
+      "indicator_code",
+      "choices_name",
+      "score_recoding",
+      "question_type"
+    )
 
 
   data_cleaned <- data %>%
     clean_dataset()
 
-  data_renamed <- suppressWarnings(recode_source(data_cleaned, data_AP = data_AP))
+  data_renamed <-
+    suppressWarnings(recode_source(data_cleaned, data_AP = data_AP))
   admin_level <- as.character(unlist(data_AP$admin_level))
   indicator_code <- as.character(unlist(data_AP$indicator_code))
 
   indicators_to_check <- c(admin_level, indicator_code)
 
-  indicators_to_check_clean <- indicators_to_check[!is.na(indicators_to_check)]
-  indicators_to_check_clean <- indicators_to_check_clean[!indicators_to_check_clean %in% c("admin1", "admin2", "admin3", "weights", "sampling_id", "cluster_id")]
+  indicators_to_check_clean <-
+    indicators_to_check[!is.na(indicators_to_check)]
+  indicators_to_check_clean <-
+    indicators_to_check_clean[!indicators_to_check_clean %in% c("admin1",
+                                                                "admin2",
+                                                                "admin3",
+                                                                "weights",
+                                                                "sampling_id",
+                                                                "cluster_id")]
 
   missing_core_elements <- check_source(data = data_renamed,
                                         indicators_to_check = indicators_to_check_clean)
 
-  admin_cols <- names(data_renamed)[grepl("^admin[0-9]$", names(data_renamed))]
+  admin_cols <-
+    names(data_renamed)[grepl("^admin[0-9]$", names(data_renamed))]
 
-  if(length(admin_cols) == 0){
-    stop(paste0(data_AP$data_source_name, " no column identifying admin units. Must follow the patern admin and admin number (e.g. admin1, admin2, etc.)."))
+  if (length(admin_cols) == 0) {
+    stop(
+      paste0(
+        data_AP$data_source_name,
+        " no column identifying admin units. Must follow the patern admin and admin number (e.g. admin1, admin2, etc.)."
+      )
+    )
   }
   admin_df <- select(data_renamed, !!admin_cols) %>% distinct()
 
 
-  if(missing_core_elements == FALSE){
+  if (missing_core_elements == FALSE) {
     if (sum(
       names(data_renamed) %in% c(
         as.character(unlist(data_AP$admin_level)),
@@ -485,64 +619,69 @@ analyse_data <- function(data, data_AP, ...){
     ) == ncol(data_renamed)) {
       return(data_renamed)
     } else{
-
       reduced_data <- data_renamed %>%
-        select(any_of(c(indicators_to_check_clean, admin_cols)))
+        select(any_of(c(
+          indicators_to_check_clean, admin_cols
+        )))
 
       agg_data <- aggregate_admin(data = reduced_data,
-        data_AP = data_AP) %>%
+                                  data_AP = data_AP) %>%
         dplyr::mutate(value = as.character(value))
 
-      lowest_admin_agg_data <- max(as.numeric(str_extract(
-        names(agg_data)[grepl("admin[0-9]", names(agg_data))],"[0-3]")))
-      lowest_admin_agg_data_name <- paste0("admin", lowest_admin_agg_data)
-      lowest_admin_list_agg <- setNames(lowest_admin_agg_data_name, lowest_admin_agg_data_name)
+      lowest_admin_agg_data <-
+        max(as.numeric(str_extract(names(agg_data)[grepl("admin[0-9]", names(agg_data))], "[0-3]")))
+      lowest_admin_agg_data_name <-
+        paste0("admin", lowest_admin_agg_data)
+      lowest_admin_list_agg <-
+        setNames(lowest_admin_agg_data_name,
+                 lowest_admin_agg_data_name)
       agg_data_admin <- agg_data %>%
         left_join(admin_df, by = c(lowest_admin_list_agg))
 
-      scores <- score_source(
-          data = data_renamed,
-          data_AP = data_AP,
-          WSC_AP = WSC_AP
-        )
+      scores <- score_source(data = data_renamed,
+                             data_AP = data_AP,
+                             WSC_AP = WSC_AP)
 
-      lowest_admin_scores <- max(as.numeric(str_extract(
-        names(scores)[grepl("admin[0-9]", names(scores))],"[0-3]")))
-      lowest_admin_scores_name <- paste0("admin", lowest_admin_scores)
-      lowest_admin_list <- setNames(lowest_admin_scores_name, lowest_admin_scores_name)
+      lowest_admin_scores <-
+        max(as.numeric(str_extract(names(scores)[grepl("admin[0-9]", names(scores))], "[0-3]")))
+      lowest_admin_scores_name <-
+        paste0("admin", lowest_admin_scores)
+      lowest_admin_list <-
+        setNames(lowest_admin_scores_name, lowest_admin_scores_name)
       scores_admin <- scores %>%
         left_join(admin_df, by = c(lowest_admin_list))
 
-      full_AP <- data_AP%>%
+      full_AP <- data_AP %>%
         tidyr::unnest(cols = where(is.list)) %>%
         dplyr::left_join(WSC_AP, by = "indicator_code") %>%
-        dplyr::mutate(
-          indicator_code_source = normalise_string(indicator_code_source)
-        ) %>%
+        dplyr::mutate(indicator_code_source = normalise_string(indicator_code_source)) %>%
         distinct()
 
-      if(sum(full_AP$wash_scoring, na.rm = T) > 0 & sum(full_AP$data_type == "hh") >0){
+      if (sum(full_AP$wash_scoring, na.rm = T) > 0 &
+          sum(full_AP$data_type == "hh") > 0) {
+        WIS_scores <- agg_score(
+          data_renamed,
+          data_AP = data_AP,
+          WSC_AP = WSC_AP,
+          .WIS_water = WIS_water,
+          .WIS_sanitation = WIS_sanitation,
+          .WIS_final = WIS_final
+        ) %>%
+          dplyr::mutate(value = as.character(value))
 
 
-      WIS_scores <- agg_score(data_renamed,
-                              data_AP = data_AP,
-                              WSC_AP = WSC_AP,
-                              .WIS_water = WIS_water,
-                              .WIS_sanitation = WIS_sanitation,
-                              .WIS_final = WIS_final) %>%
-        dplyr::mutate(value = as.character(value))
-
-
-      lowest_admin_WIS <- max(as.numeric(str_extract(
-        names(WIS_scores)[grepl("admin[0-9]", names(WIS_scores))],"[0-3]")))
-      lowest_admin_WIS_name <- paste0("admin", lowest_admin_WIS)
-      lowest_admin_list_WIS <- setNames(lowest_admin_WIS_name, lowest_admin_WIS_name)
-      WIS_admin <- WIS_scores %>%
-        left_join(admin_df, by = c(lowest_admin_list_WIS))
-      scores_admin <- bind_rows(scores_admin, WIS_admin)
+        lowest_admin_WIS <-
+          max(as.numeric(str_extract(names(WIS_scores)[grepl("admin[0-9]", names(WIS_scores))], "[0-3]")))
+        lowest_admin_WIS_name <- paste0("admin", lowest_admin_WIS)
+        lowest_admin_list_WIS <-
+          setNames(lowest_admin_WIS_name, lowest_admin_WIS_name)
+        WIS_admin <- WIS_scores %>%
+          left_join(admin_df, by = c(lowest_admin_list_WIS))
+        scores_admin <- bind_rows(scores_admin, WIS_admin)
       }
 
-      data_scored <- dplyr::bind_rows(agg_data_admin, scores_admin) %>%
+      data_scored <-
+        dplyr::bind_rows(agg_data_admin, scores_admin) %>%
         ungroup()
     }
 
@@ -551,20 +690,23 @@ analyse_data <- function(data, data_AP, ...){
       dplyr::distinct()
 
     data_scored <-
-      data_scored[, names(data_scored) %in% admin_cols | colSums(is.na(data_scored)) < nrow(data_scored)]
+      data_scored[, names(data_scored) %in% admin_cols |
+                    colSums(is.na(data_scored)) < nrow(data_scored)]
 
     final_cols <- c("indicator", "choice", "value", "context")
 
     data_scored <-
       tibble::add_column(data_scored,!!!final_cols[setdiff(names(final_cols), names(data_scored))])
 
-    data_scored$source <- paste0(data_AP$data_source_name, "-",data_AP$data_sheet_name)
+    data_scored$source <-
+      paste0(data_AP$data_source_name, "-", data_AP$data_sheet_name)
 
 
 
     return(data_scored)
-  }else{
-    warning(paste0(unique(data_AP$data_source_name)), " could not be analysed. Core variables are missing.")
+  } else{
+    warning(paste0(unique(data_AP$data_source_name)),
+            " could not be analysed. Core variables are missing.")
   }
 }
 
@@ -616,15 +758,14 @@ analyse_data <- function(data, data_AP, ...){
 #' result <- analyse_var(this_design, var_analyse,
 #' agg_level = this_dataAP$admin_level)
 #' }
-analyse_var <- function(design_data, var_analyse, agg_level,...) {
-
-  if(!"tbl_svy" %in% class(design_data)){
+analyse_var <- function(design_data, var_analyse, agg_level, ...) {
+  if (!"tbl_svy" %in% class(design_data)) {
     stop("design_data must be a srvyr::as_survey_design object")
   }
-  if(!is.character(var_analyse)){
+  if (!is.character(var_analyse)) {
     stop("var_analyse must be a character vector.")
   }
-  if(!is.character(agg_level)){
+  if (!is.character(agg_level)) {
     stop("agg_level must be a character vector.")
   }
 
@@ -672,29 +813,43 @@ analyse_var <- function(design_data, var_analyse, agg_level,...) {
 #' \dontrun{
 #' this_dataAP <- get_dataAP("SMART-2019", "cleaned_data_admin1", context_AP)
 #' }
-get_dataAP <- function(source_name, data_sheet_name, context_AP){
-
-  if(is.na(data_sheet_name)){
+get_dataAP <- function(source_name, data_sheet_name, context_AP) {
+  if (is.na(data_sheet_name)) {
     data_source <- context_AP %>%
       dplyr::filter(data_source_name == !!source_name) %>%
       dplyr::distinct()
-  }else{
+  } else{
     data_source <- context_AP %>%
-      dplyr::filter(data_source_name == !!source_name, data_sheet_name == !!data_sheet_name) %>%
+      dplyr::filter(data_source_name == !!source_name,
+                    data_sheet_name == !!data_sheet_name) %>%
       dplyr::distinct()
   }
 
   analysis_param <- data_source %>%
-    dplyr::select(data_source_name, data_sheet_name,data_worksheet_url,
-                  admin_level,data_type, context, indicator_code_source,
-                  indicator_code, choices_name, score_recoding,
-                  question_type) %>%
-    dplyr::group_by(data_source_name, data_sheet_name, data_worksheet_url,
-                    admin_level,data_type, context) %>%
+    dplyr::select(
+      data_source_name,
+      data_sheet_name,
+      data_worksheet_url,
+      admin_level,
+      data_type,
+      context,
+      indicator_code_source,
+      indicator_code,
+      choices_name,
+      score_recoding,
+      question_type
+    ) %>%
+    dplyr::group_by(
+      data_source_name,
+      data_sheet_name,
+      data_worksheet_url,
+      admin_level,
+      data_type,
+      context
+    ) %>%
     dplyr::summarise(dplyr::across(dplyr::everything(), list),
                      .groups = "drop")
 
   return(analysis_param)
 
 }
-

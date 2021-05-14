@@ -1,28 +1,9 @@
-WASH severity classification (WSC) processing
-================
 
-  - [About this package](#about-this-package)
-  - [Installation](#installation)
-  - [Setting up an analysis workflow](#setting-up-an-analysis-workflow)
-  - [Structure of the analysis
-    process](#structure-of-the-analysis-process)
-      - [WSC Analysis Plan](#wsc-analysis-plan)
-      - [data\_sources](#data_sources)
-      - [context\_AP](#context_ap)
-  - [Main functions](#main-functions)
-      - [Clean](#clean)
-      - [Recode](#recode)
-      - [Aggregation](#aggregation)
-      - [Analyse](#analyse)
-  - [Datasets available in the
-    package](#datasets-available-in-the-package)
-  - [About the WSC](#about-the-wsc)
-
-<img align="right" height="150" src="man/figures/WSC_logo_EN.png">
+# WASH severity classification (WSC) processing <img align="right" height="139" src="man/figures/WSC_logo_EN.png"/>
 
 [![R-CMD-check](https://github.com/WASH-Severity-Classification/WSC_processing/actions/workflows/r_cmd_check.yml/badge.svg)](https://github.com/WASH-Severity-Classification/WSC_processing/actions/workflows/r_cmd_check.yml)
 
-# About this package
+## About this package
 
 This packages offers functions and data pipeline useful to process data
 for the WASH Severity Classification (WSC). The package allows the user
@@ -31,7 +12,7 @@ Implementation
 Handbook](https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit#bookmark=id.28of71vj4657).
 This includes the WASH Insecurity Score (WIS).
 
-# Installation
+## Installation
 
 You can install the latest version of WSC from
 [github](https://github.com/ElliottMess/WSC) with:
@@ -41,12 +22,12 @@ devtools::install_github("Severity-Classification/WSC_processing")
 library(WSCprocessing)
 ```
 
-# Setting up an analysis workflow
+## Setting up an analysis workflow
 
 For more information on a step-by-step procedure on how to set up an
 analysis workflow, please see `vignette("setup-worklow")`
 
-# Structure of the analysis process
+## Structure of the analysis process
 
 The WSCprocessing package takes a russian-doll type of approach to the
 analysis: it works on an imbrication of a series of functions. The
@@ -73,7 +54,7 @@ The worklfow of the analysis can then be broken down as follow:
 
 ![](man/figures/WSC_data_analysis_process.jpg)
 
-## WSC Analysis Plan
+### WSC Analysis Plan
 
 The core of the WSCprocessing is the general WSC analysis plan denoted
 WSC\_AP in the package’s functions. It consists of a spreadsheet stored
@@ -118,7 +99,7 @@ tibble(example = runif(50, 0, 1) ) %>%
   )
 ```
 
-## data\_sources
+### data\_sources
 
 data\_sources is a googlesheet that can be accessed [in
 English](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=2068774981),
@@ -143,7 +124,7 @@ follow:
 | Soundness of method (M)/Solidité de la méthode (M)           | character Drop-down menu to evaluate soundress of method of the data source. For further definition see Implementation Handbook section “Protocol 2.4: Assess evidence reliability”                   |
 | Overall reliability/Fiabilité globale                        | character Formula, DO NOT modify. Implements the reliability scoring outlined in the Implementation Handbook                                                                                          |
 
-## context\_AP
+### context\_AP
 
 To provide a link between the WSC\_AP and the context in which the
 analysis is conducted, it is necessary to set up a context\_AP that
@@ -199,7 +180,7 @@ consistent way.
 
 See the `vignette("setup-workflow")` for more details.
 
-# Main functions
+## Main functions
 
 The package is organised around a series of function that take the
 different steps of the analysis process and structure them to have
@@ -214,7 +195,7 @@ There are 5 families of functions in the package:
     percent rule
   - Analyse: Analyse data to fit into the final outputs
 
-## Clean
+### Clean
 
 Three functions available:
 
@@ -224,7 +205,7 @@ Three functions available:
   - `normalise_string` removes special characters, spaces, etc. to have
     a normalised string.
 
-## Recode
+### Recode
 
 *`recode_variable` and `recode_source` take values from the context\_AP
 and rename columns and values to match it, respectivelly for one
@@ -232,7 +213,7 @@ indicator/variable or for a whole data\_source *`rename_vec` rename a
 vector from a list ot another. It is the backbone of the two other
 functions in the family.
 
-## Aggregation
+### Aggregation
 
   - `aggregate_admin` Aggregate variables at the specified
     administrative unit
@@ -251,7 +232,7 @@ normalise_string("àaF   kgfk")
 
     ## [1] "aaf_kgfk"
 
-## Analyse
+### Analyse
 
 This is where the russian-dolls concept is the most pertinent as those
 functions are wrappers around each others.
@@ -264,7 +245,7 @@ functions are wrappers around each others.
   - `analyse_data` analyse a data set
   - `analyse_var` analyse a variable
 
-# Datasets available in the package
+## Datasets available in the package
 
 Multiple datasets are available in the package to provide real-life
 examples of how the data can be processed:
@@ -281,7 +262,7 @@ For convenience, those datasets are also loaded:
   - `WIS_sanitation`
   - `WIS_final`
 
-# About the WSC
+## About the WSC
 
 The WASH Severity Classification (WSC) is a new interagency global
 initiative led by the [Global WASH Cluster](http://washcluster.net/),
