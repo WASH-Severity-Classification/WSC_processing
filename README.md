@@ -232,6 +232,85 @@ normalise_string("àaF   kgfk")
 
     ## [1] "aaf_kgfk"
 
+### Score
+
+  - `score_variable` and `score_source` apply the global severity scales
+    in WSC\_AP to the relevant variables, respectively for a single
+    variable and for a data\_source
+  - `score_WIS` calculates the WASH insecurity score according to the
+    guidelines in the Implementation Handbook. To do so, it uses three
+    reference tables:
+    [WIS\_water](https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit#gid=0),
+    [WIS\_sanitation](https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit#gid=953151630),
+    and
+    [WIS\_final](https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit#gid=120011495).
+    Those tables provide the key on how to move from the different
+    variables included in the score. See below for more details.
+  - `twenty_rule` The 20 percent rule states that “an area is classified
+    as the most severe phase that affects at least 20 percent of the
+    population”, based on the percentage of population in each of the
+    five severity phases.
+
+#### WASH Insecurity score
+
+The WASH Insecurity score (WIS) is based on the intersection of multiple
+matrices that categorise those combinations into severity phases. See
+the [WSC Implementation
+Handbook](https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit#bookmark=id.28of71vj4657)
+for more details.
+
+In order to calculate the score, the following variables need to present
+in the **household-level** dataset passed to the function:
+
+  - **sufficiency\_of\_water**: identifies the needs that the household
+    can fulfil with its main water source. It can take the following
+    values:
+      - drinking: Enough water for drinking BUT NOT enough for cooking
+        AND personal hygiene
+      - drinking\_cooking: Enough water for drinking, cooking, personal
+        hygiene and other domestic purposes
+      - drinking\_cooking\_pers\_hyg\_other\_dom: Enough water for
+        drinking, cooking, personal hygiene and other domestic purposes
+      - drinking\_cooking\_pers\_hyg: Sufficient water for drinking AND
+        cooking AND personal hygiene BUT NOT other domestic purposes
+      - drinking\_cooking\_OR\_pers\_hyg: Enough water for drinking AND
+        EITHER cooking OR personal hygiene
+      - no\_drinking: Not enough water for drinking
+      - 3\_9: 3 to 9 litres of water per person per day (lppd)
+      - 50\_Inf: 50 or more lppd
+      - 15\_50 : 15 to 50 lppd
+      - 9\_15: 9 to 15 lppd
+      - 0\_3: 0 to 3 lppd
+      - more\_sufficient: more than sufficient water
+      - sufficient: sufficient water
+      - just\_sufficient: just enough water
+      - not\_sufficient: insufficient water
+      - not\_sufficient\_at\_all: not sufficient at all
+      - no\_sufficiency: no sufficiency of water available.
+  - **water\_source\_dist**: combines the distance to the water source
+    (distance\_to\_water\_source in WSC\_AP) and the type of water
+    source (water\_source in WSC\_AP). Can take the following values,
+    which is a concatenation of distance\_to\_water\_source and
+    water\_source with an "\_":
+      - surface\_water
+      - unimproved
+      - improved\_less\_30
+      - improved\_more\_30
+      - improved\_premises
+  - **type\_of\_sanitation\_facility**:
+      - improved\_sanitation
+      - improved\_sanitation
+      - open\_defec
+  - **sanitation\_facility\_sharing**:
+      - not\_shared
+      - shared
+      - shared\_less20
+      - shared\_20to50
+      - shared\_more50
+  - **access\_to\_soap**:
+      - soap
+      - no\_soap
+
 ### Analyse
 
 This is where the russian-dolls concept is the most pertinent as those
