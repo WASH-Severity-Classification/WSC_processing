@@ -1,6 +1,7 @@
 ---
 title: "setup-worklow"
-output: rmarkdown::html_vignette
+output:
+    rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{setup-worklow}
   %\VignetteEngine{knitr::rmarkdown}
@@ -14,6 +15,160 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup, cache=TRUE, message=FALSE, echo=FALSE}
+```{r setup, message=FALSE, echo=FALSE}
 library(WSCprocessing)
+secret_fldr_path <- "https://drive.google.com/drive/folders/1wSZ62ynXgnbTrD7EpSVe98NOc7GQvw0y"
+```
+
+# Overview
+
+The WSC analysis workflow can be viewed in 9 steps (with time indication for a specific country based on 3 implementations experience):
+
+1. Setup folder structure and Copy data_sources and context_AP (10 minutes)
+2. Gather data sources and populate evidence repository (1-3 days)
+3. Document data sources in data_sources (1 day)
+4. Extract and clean data frames (1-3 days)
+5. Calculate composite indicators that are not present in the data.frame as extracted (e.g. rCSI, FCS, etc.) (2 days)
+6. Set up context_AP for each indicator present in the data sources (1 day)
+7. Repeat 2 to 6 to have as much of the indicators covered as data allows (2 days)
+8. Write analysis script and debug (1-3 days)
+9. Create worksheets for analysis workshop
+
+The time needed to implement the WSC process is then estimated to be somewhere between 9 and 15 days depending on the number of data sources, their messiness, and the ease to find them.
+
+# 1. Copy data_sources and context_AP and setup folder structure
+
+Use the [WSCdrivemanipulation](https://github.com/WASH-Severity-Classification/WSCdrivemanipulation) `WSCdrivemanipulation::create_impl_fldr_full_str()` package to create the folder structure on google drive.
+
+```{r, message=FALSE, eval =FALSE, message = FALSE}
+library(WSCdrivemanipulation)
+
+pop_df <- WSCprocessing::get_pop_df("BFA", admin_level = "admin2")
+
+# secret_fldr_path is created before and hidden here to avoid problems if you run the code in your own computer.
+
+create_impl_fldr_full_str(
+  impl_fldr_path = secret_fldr_path,
+  admin_analysis = "admin2",
+  admin_df = pop_df
+)
+
+```
+
+Copy the [data_sources](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=1432680895) and [context_AP](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=1704438982) sheets to the root of the evidence repository.
+
+# 2. Gather data sources and populate evidence repository (1-3 days)
+
+The goal is to get data as granular as possible (lowest administrative unit possible) and as reliable as possible. As we are ultimately trying to infer on the whole population of our administrative unit of analysis, it is preferable to use data sources that are covering the whole of our administrative unit of analysis rather than just part of them. See the data reliability in the [WSC Implementation Handbook](https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit#bookmark=id.28of71vj4657) for more details.
+
+* Get in touch with REACH colleagues in country first. They usually have a good graspe of the data landscape in a given country.
+* Contact National WASH Cluster for data sources related to WASH
+* Through REACH colleagues or WASH Cluster contact Health Cluster or ministry of health to get epidemiological data for Acute Watery diarrhoea (AWD), Acute Bloody Diarrhoea (ABD), and malaria at least.
+
+# 3. Document data sources in data_sources (1 day)
+
+Once the first data sources have been gathered, it's important to start documenting them in details in the [data_sources](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=2068774981) sheet to avoid problems further down the line.
+
+# 4. Extract and clean data frames (1-3 days)
+To be analysed properly by the WSCprocessing package, the data must be stored in some level of data format (at the moment supporting googlesheets, .xlsx, .xls, .csv, and .sav), with a few prescription:
+
+* the data should be [tidy](https://r4ds.had.co.nz/tidy-data.html)
+* Each row should an administrative unit to be analysed (observation)
+* Each indicator/variable to be analysed should in a column
+* The administrative unit columns should follow the syntax admin1, admin2, or admin3, or should be specified in context_AP
+* select_multiple questions should follow the following syntax: question.choice1, question.choice2 if choices are stored in boleean columns.
+
+The easiest way to store and use the data is probably to use googlesheets as they can be easily linked in context_AP and will be visible to the analysts if they need them. If you need to run local copies of files, you can provide the path to the dataset in the data_source_name in context_AP, or let the script try to find it by naming the file like the data_source_name and putting it anywhere in your working directory. This is quite **hazardous**, so be aware that it is not a great idea.
+
+All columns names can be identified against the WSC_AP in context_AP.
+
+Here is an example of a simple data set ready for analysis:
+```{r}
+knitr::kable(bfa_smart_2019_admin1)
+```
+
+And here is an example for select_multiple questions:
+```{r}
+
+bfa_msna_2020 %>% 
+  select(contains("retour_condition")) %>% 
+  head(10) %>% 
+  knitr::kable()
+```
+
+# 5. Calculate composite indicators that are not present in the data.frame as extracted (e.g. rCSI, FCS, etc.) (2 days)
+
+Some indicators will not be available out of the box in the datasets, so there might be a need to calculate them before processing and adding them to the dataframe.
+
+This will typically be the case for the reduced coping strategy index (rCSI), food consumption score (FCS), household-hunger scale (HHS), and the epidemiological data.
+
+# 6. Set up context_AP for each indicator present in the data sources (1 day)
+
+Once datasets are identified, you can start to fill in your context_AP.
+
+Typically, the process is to identify a datasource for all the indicators that are in the template.
+For each indicator fill all relevant columns. The most critical ones are :
+
+* **context**: concatenate the country iso3 code and the year of the data source (e.g. ssd_2020)
+* **data_source_name**: name of the data source
+* **data_worksheet_url**: where the data can be found. Despite its name, a path to a local file can also be provided. If left blank (NA), the package will try to retrieve a data set by trying to find files matching the data_source_name and one of the supported extensions (.csv, .xls, .xlsx).
+* **data_sheet_name**: name of the sheet where the data is stored for workbooks.
+* **indicator_code_source**: column name in the data source as is in data_worksheet_url or equivalent
+* **question_type**: if select_multiple is mentionned, then the script will try to find all the choices related to the question by passing the indicator_code_source and a "." in the datasets.
+* **choices_label**: if recoding choices to a question, gives the key to how the choice is identified in the dataset
+* **score_recoding**: if recoding choices, provides the value to recode the choices to.
+
+With those columns, the analysis should run.
+
+> The WIS rests on the indicator : 
+ * distance_to_water_source
+ * sufficiency_of_water
+ * water_source
+ * type_of_sanitation_facility
+ * sanitation_facility_sharing
+ * access_to_soap
+ **Make sure that they are in the context_AP **
+ 
+ See the README, section WASH Insecurity score for more details.
+
+If you want to recode choices of questions (either select_one or select_multiple), you will need to duplicate the indicators line for each choice and enter the names in choices_label and score_recoding. **This is needed for the WIS**.
+
+# 7. Repeat 2 to 6 to have as much of the indicators covered as data allows (2 days)
+
+As you move in the analysis workflow, you will probably realise that other data sources exist that the one you identified at stage 2. Just repeat steps 2 to 6 as many times as needed.
+
+# 8. Write analysis script and debug (1-3 days)
+
+To analyse the data, you will need to write your own analysis script. It is a good idea to keep everything in one or a few files and rerun from the source as needed to avoid issues with irreproductable analysis.
+
+At the most basic level, the script will look something like that:
+```{r, eval=FALSE}
+result <- analyse_country(context_AP, admin_analysis = "admin2", country_iso3 = "BFA")
+```
+
+# 9. Create worksheets for analysis workshop
+
+If you used `WSCdrivemanipulation::create_impl_fldr_full_str()` to create your implementation folder structure, you should then be able to update the data in the worksheets with:
+```{r, eval=FALSE}
+result <- analyse_country(context_AP, admin_analysis = "admin2", country_iso3 = "BFA")
+
+WSCdrivemanipulation::update_data(result,
+   impl_fldr_path = secret_fldr_path,
+   admin_analysis = "admin2",
+   admin_df = pop_df
+ )
+
+```
+
+If for some reason you haven't created your folder structure yet, you can use
+```{r, eval = FALSE}
+result <- analyse_country(context_AP, admin_analysis = "admin2", country_iso3 = "BFA")
+
+create_impl_fldr_full_str(
+  impl_fldr_path = secret_fldr_path,
+  admin_analysis = "admin2",
+  admin_df = pop_df,
+  result = result
+)
+
 ```
