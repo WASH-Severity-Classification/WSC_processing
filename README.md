@@ -1,191 +1,287 @@
+WASH severity classification (WSC) processing
+================
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
+  - [About this package](#about-this-package)
+  - [Installation](#installation)
+  - [Setting up an analysis workflow](#setting-up-an-analysis-workflow)
+  - [Structure of the analysis
+    process](#structure-of-the-analysis-process)
+      - [WSC Analysis Plan](#wsc-analysis-plan)
+      - [data\_sources](#data_sources)
+      - [context\_AP](#context_ap)
+  - [Main functions](#main-functions)
+      - [Clean](#clean)
+      - [Recode](#recode)
+      - [Aggregation](#aggregation)
+      - [Analyse](#analyse)
+  - [Datasets available in the
+    package](#datasets-available-in-the-package)
+  - [About the WSC](#about-the-wsc)
 
-# WSC <img src='man/figures/WSC_logo_EN.png' align="right" height="138.5" />
+<img align="right" height="150" src="man/figures/WSC_logo_EN.png">
 
-![R-CMD-check](https://github.com/ElliottMess/WSC/workflows/R-CMD-check/badge.svg)
+[![R-CMD-check](https://github.com/WASH-Severity-Classification/WSC_processing/actions/workflows/r_cmd_check.yml/badge.svg)](https://github.com/WASH-Severity-Classification/WSC_processing/actions/workflows/r_cmd_check.yml)
 
-## About this package
+# About this package
 
-This package offers functions to process data according to the WSC
-guidelines.
+This packages offers functions and data pipeline useful to process data
+for the WASH Severity Classification (WSC). The package allows the user
+to implement data processing procedures layed out in the [WSC
+Implementation
+Handbook](https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit#bookmark=id.28of71vj4657).
+This includes the WASH Insecurity Score (WIS).
 
-Functions rely on the existence of two global analysis plans:
-
-  - The general WSC analysis plan (AP) than can be found
-    [here](https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing)
-    or as an object in the package (`WSCprocessing::WSC_AP`)
-  - The WASH Insecurity Score (WIS) analysis plan that can be found
-    [here](https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit?usp=sharing)
-    (in multiple sheets) or as an object in the package
-    (`WSCprocessing::WIS_water`, `WSCprocessing::WIS_sanitation`,
-    `WSCprocessing::WIS_final`)
-
-To contextualise the analysis to the environment in which the WSC is
-applied, users should create:
-
-  - A context specific AP that links the indicators in the WSC AP to the
-    datasets used in the context analysis. See an example
-    [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing)
-    or in `WSCprocessing::context_AP`.
-
-The data is stored on googlesheets to ease the remote use of the
-package, but the functions use `data.frames` as inputs.
-
-## Installation
+# Installation
 
 You can install the latest version of WSC from
 [github](https://github.com/ElliottMess/WSC) with:
 
 ``` r
-devtools::install_github("WASH-Severity-Classification/WSC_processing")
+devtools::install_github("Severity-Classification/WSC_processing")
+library(WSCprocessing)
 ```
 
-## Main Functions
+# Setting up an analysis workflow
 
-The package contains three main functions:
+For more information on a step-by-step procedure on how to set up an
+analysis workflow, please see `vignette("setup-worklow")`
 
-    1. WSCprocessing::score_WIS(): scores a dataset according to the calculation model.
-    2. WSCprocessing::agg_score(): aggregates results at a specified administrative level
-    3. WSCprocessing::twenty_rule(): applies the 20% rule to a specified datasets
-    4. WSCprocessing::assign_hiAdmin2loAdmin(): assign results from a higher administrative level to a lower one in an uniform way (all lower units part of a higher administrative unit have the same value).
-    5. WSCprocessing::score_df_AP(): Score dataset according to the Analysis Plan (AP) phases.
-    6. WSCprocessing::scoring_var(): Score individual variables according to AP.
+# Structure of the analysis process
 
-Working examples are provided for all the functions based on the
-datasets documented within the package.
+The WSCprocessing package takes a russian-doll type of approach to the
+analysis: it works on an imbrication of a series of functions. The
+easiest way to look at it is to go from the contextual analysis plan
+(AP) and work ones way down to a single variable.
 
-### 1\. score\_WIS
+The worklfow of the analysis can then be broken down as follow:
+
+1.  **The WSC analysis plan (WSC\_AP)** provides the overall framework,
+    naming, etc. of indicators across all WSC analyses, providing global
+    indicators to be found in all contexts, global scaling for
+    indicators into severity phases, uniform naming of indicators, etc.
+2.  **data\_sources** lists, describe, and categorise data sources used
+    in the analysis. This can include narrative or tabular sources. Only
+    tabular data are analysed with the WSCprocessing package. When data,
+    data sources, data sets or dataframe are used in this document and
+    in the WSCprocessing package at large, we always refer to tabular
+    data (stored in data.frames or similar objects).
+3.  **WSC contextual analysis (context\_AP)** plan provides the key
+    between the WSC\_AP and the data sources that will be analysed.
+4.  **Data sets** are the individual data frames from data sources where
+    the data is stored.
+5.  In each data sets, **variables** or indicators are analysed.
+
+![](man/figures/WSC_data_analysis_process.jpg)
+
+## WSC Analysis Plan
+
+The core of the WSCprocessing is the general WSC analysis plan denoted
+WSC\_AP in the package’s functions. It consists of a spreadsheet stored
+on the WSC Dev Team google drive, in the [Analysis
+folder](https://drive.google.com/drive/folders/1lgacIV2QjzbmRxVN3vXw-hBrdzltRPk4).
+The WSC\_AP mother sheet can be found
+[here](https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=drive_web&ouid=100412281577291534733).
+
+As a convenience, the WSC\_AP is pre-loaded in WSCprocessing. It can be
+found in the R object WSC\_AP
+
+In the WSC\_AP, each row is an indicator. All column description can be
+found in the description of the object that can be accessed by running:
 
 ``` r
-library(WSCprocessing)
-library(knitr)
-
-WIS_scored <- score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCprocessing::context_AP, context = "bfa_2020",
-         WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
-         WIS_final = WSCprocessing::WIS_final)
-#> Warning in r3c(scoring$key_water, WIS_water$key_water, WIS_water$score_water)
-#> %>% : NAs introduced by coercion
-#> Warning in r3c(scoring$key_sanit, WIS_sanitation$key_sanit,
-#> WIS_sanitation$score_sanit) %>% : NAs introduced by coercion
-#> Warning in scoring$score %>% as.numeric(): NAs introduced by coercion
-
-kable(head(WIS_scored))
+?WSC_AP
 ```
 
-| admin1      | admin2     | admin3   | water\_source | time\_going\_water\_source | time\_queing\_water\_source | sufficiency\_of\_water | access\_to\_soap | uuid                                 | cluster\_id    | distance\_to\_water\_source | weights     | type\_of\_sanitation\_facility | sanitation\_facility\_sharing | water\_source\_dist | key\_water                      | key\_sanit                                       | water\_score | sanit\_score | key\_score | score | score\_final |
-| :---------- | :--------- | :------- | :------------ | :------------------------- | :-------------------------- | :--------------------- | :--------------- | :----------------------------------- | :------------- | :-------------------------- | :---------- | :----------------------------- | :---------------------------- | :------------------ | :------------------------------ | :----------------------------------------------- | -----------: | -----------: | :--------- | :---- | -----------: |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | f3227fe6-78ba-490b-9480-0f31750ac1f6 | BF480204\_pdi  | less\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_less\_30  | sufficient-/-improved\_less\_30 | open\_defec-/-NA-/-no\_soap                      |            2 |            4 | 2-/-4      | 3     |            3 |
-| centre\_est | koulpelogo | ouargaye | improved      | more\_30                   | less\_30                    | sufficient             | no\_soap         | e27b5949-728e-4913-b07f-c94a1b278ace | BF480204\_pdi  | more\_30                    | 0.034512707 | open\_defec                    | NA                            | improved\_more\_30  | sufficient-/-improved\_more\_30 | open\_defec-/-NA-/-no\_soap                      |            3 |            4 | 3-/-4      | 4     |            4 |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | 127ce1fa-e05c-4b3e-9eca-8df58a4c61de | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_nonhygienic           | shared\_less20                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_nonhygienic-/-shared\_less20-/-no\_soap |            2 |            3 | 2-/-3      | 3     |            3 |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | soap             | 994088cf-ac1e-4174-9ecb-ff2201d98655 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | not\_shared                   | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-not\_shared-/-soap           |            2 |            1 | 2-/-1      | 2     |            2 |
-| centre\_est | koulpelogo | ouargaye | improved      | less\_30                   | less\_30                    | sufficient             | no\_soap         | afff9552-7ae6-403c-b688-f501285458a2 | BF480204\_pdi  | less\_30                    | 0.034512707 | latrine\_hygienic              | shared\_20to50                | improved\_less\_30  | sufficient-/-improved\_less\_30 | latrine\_hygienic-/-shared\_20to50-/-no\_soap    |            2 |            4 | 2-/-4      | 3     |            3 |
-| sahel       | seno       | dori     | improved      | more\_30                   | more\_30                    | sufficient             | soap             | ec37cd9c-27a4-4a48-8ac5-ceef62c3cfc7 | BF560202\_host | more\_30                    | 0.574334461 | latrine\_hygienic              | shared\_less20                | improved\_more\_30  | sufficient-/-improved\_more\_30 | latrine\_hygienic-/-shared\_less20-/-soap        |            3 |            2 | 3-/-2      | 3     |            3 |
+An important concept introduced in this worksheet is the
+globally\_scaled and the affering scales columns. The goal of those
+column is to provide a standard way to evaluate severity for a given
+indicator. The content of the cell should follow a syntax using [tidy
+selection](https://dplyr.tidyverse.org/articles/programming.html#tidy-selection-1)
+to select the indicators (in the sense that you don’t need to quote the
+indicator name) and logical operators that would be valid in a
+[dplyr::case\_when](https://dplyr.tidyverse.org/reference/case_when.html)
+statement. The statements are stringed in the case\_when statement from
+Catastrophic to None/Minimal (right to left). All percentages are
+treated as decimal values (90% equals 0.9).
 
-### 2\. agg\_score
+For instance, a scale says that a Phase Catastrophic for indicator
+example is any value above 54% then the corresponding cell for column
+Catastrophic in the WSC\_AP would be:
 
 ``` r
-library(WSCprocessing)
-library(knitr)
-
-score_agg_admin2 <- agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-          WSC_AP = WSCprocessing::WSC_AP, data = WSCprocessing::bfa_msna_2020)
-#> Warning in r3c(scoring$key_water, WIS_water$key_water, WIS_water$score_water)
-#> %>% : NAs introduced by coercion
-#> Warning in r3c(scoring$key_sanit, WIS_sanitation$key_sanit,
-#> WIS_sanitation$score_sanit) %>% : NAs introduced by coercion
-#> Warning in scoring$score %>% as.numeric(): NAs introduced by coercion
-
-kable(head(score_agg_admin2))
+#Catastrophic cell
+example > 0.54
+#Which would then be implemented as follow in the workflow:
+tibble(example = runif(50, 0, 1) ) %>% 
+  mutate(sev_example = case_when(eval(parse(example)) > 0.54 ~ "Catastrophic",
+                                 TRUE ~ "None/Minimal")
+  )
 ```
 
-| admin2 | indicator  | choice |     value | context   |
-| :----- | :--------- | :----- | --------: | :-------- |
-| bale   | key\_score | 2-/-1  | 0.0483755 | bfa\_2020 |
-| bale   | key\_score | 2-/-2  | 0.2598389 | bfa\_2020 |
-| bale   | key\_score | 2-/-3  | 0.0125265 | bfa\_2020 |
-| bale   | key\_score | 2-/-4  | 0.0592587 | bfa\_2020 |
-| bale   | key\_score | 3-/-1  | 0.0686043 | bfa\_2020 |
-| bale   | key\_score | 3-/-2  | 0.1557088 | bfa\_2020 |
+## data\_sources
 
-### 3\. twenty\_rule
+data\_sources is a googlesheet that can be accessed [in
+English](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=2068774981),
+[French](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=890607154),
+and an
+[example](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=1432680895).
+It is heavily linked to the context\_AP and data\_sources should be
+filled in before moving on to context\_AP. The column definition is as
+follow:
+
+| Column                                                       | Description                                                                                                                                                                                           |
+| :----------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Organisation/Organisation                                    | character Name of the organisation published the data source                                                                                                                                          |
+| Source name/Nom de la source                                 | character Name of the data source. Should be explicit and short.                                                                                                                                      |
+| Description/Description                                      | character Description of the content of the data sources. For surveys, it should include short methodology note with number of interviews, representativeness of the sample,and when it was conducted |
+| Year/Année                                                   | number Year of publication                                                                                                                                                                            |
+| Limits of the source/Limites de la source                    | character Limits of the data source: what should analyst know about the limitations of the data source                                                                                                |
+| Dataset code/Code source                                     | character String creating a unique identifier for the data source. Avoid spaces and special characters (accents, ponctuations, etc.)                                                                  |
+| Administrative units covered/Unités administrative couvertes | character Drop-down menu with the different administrative unit level possible in a country.                                                                                                          |
+| Data level/Niveau de donnée                                  | character Drop-down menu with the different type of data analysed: household-level or area-level.                                                                                                     |
+| Time relevance (T)/Pertinance temporelle (T)                 | character Drop-down menu to evaluate time relevance of the data source. For further definition see Implementation Handbook section “Protocol 2.4: Assess evidence reliability”                        |
+| Soundness of method (M)/Solidité de la méthode (M)           | character Drop-down menu to evaluate soundress of method of the data source. For further definition see Implementation Handbook section “Protocol 2.4: Assess evidence reliability”                   |
+| Overall reliability/Fiabilité globale                        | character Formula, DO NOT modify. Implements the reliability scoring outlined in the Implementation Handbook                                                                                          |
+
+## context\_AP
+
+To provide a link between the WSC\_AP and the context in which the
+analysis is conducted, it is necessary to set up a context\_AP that
+provides the link between the WSC\_AP and the different data sources.
+
+This is done through a googlesheet that can be accessed in
+[English](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=324383366),
+[French](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=0),
+and an
+[example](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=1704438982).
+
+In this googlesheet, each row is an indicator\_code from the WSC\_AP.
+Columns should be filled in as follow:
+
+| Column                          | Description                                                                                                                                                                                                                                                        |
+| :------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Niveau du cadre analytique      | character Niveau/Dimension du cadre analytique comme vu dans le cadre analytique CSW.                                                                                                                                                                              |
+| Analytical framework level      | character Analytical framework level/dimension as in the WSC analytical framework                                                                                                                                                                                  |
+| Sous-niveau du cadre analytique | character Sous-niveau/sous-dimension du cadre analytique comme vu dans le cadre analytique CSW                                                                                                                                                                     |
+| Analytical framework sub-level  | character Analytical framework sub-level/sub-dimension as in the WSC analytical framework                                                                                                                                                                          |
+| Indicator                       | character Complete description of the indicator.                                                                                                                                                                                                                   |
+| Indicateur                      | character Description complète de l’indicateur.                                                                                                                                                                                                                    |
+| indicator\_code                 | character Indicator code, as in the WSC analysis plan                                                                                                                                                                                                              |
+| context                         | character Context to which the specific indicator applies. This is to be used if multiple context (geographical or temporal) are being analysed. For instance, if data is used for Burkina Faso in 2020 and 2019, this column can help distinguish the indicators. |
+| data\_source\_name              | character Name of the data source. There a data validation drop-down from the data sources sheets to avoid mistakes.                                                                                                                                               |
+| data\_worksheet\_url            | character (URL) URL (link) to where the indicator data source is stored and accessible as a worksheet                                                                                                                                                              |
+| data\_sheet\_name               | character sheet name where the indicator data source is stored and accessible                                                                                                                                                                                      |
+| indicator\_code\_source         | Indicator code as in the analysed dataset (e.g. the column name)                                                                                                                                                                                                   |
+| admin\_level                    | Most granular level at which the data is available                                                                                                                                                                                                                 |
+| data\_type                      | Type of data: either household (coded hh) or area (coded area).                                                                                                                                                                                                    |
+| question\_type                  | Type of questions with choice list linked to it. It should follow the same structure (select\_one, select\_multiple, integer) as in XLSForm                                                                                                                        |
+| question\_label                 | Label of question as in the form                                                                                                                                                                                                                                   |
+| choices\_list                   | Name of choices list, if relevant. This is particularly helpful to link the indicator to an ODK/kobo form with XLSForm. See here for more details on XLSforms.                                                                                                     |
+| choices\_name                   | Code for the choice that will be used to classify/score the question                                                                                                                                                                                               |
+| choices\_label                  | Name for the choice that will be used to classify/score the question                                                                                                                                                                                               |
+| score\_recoding                 | Score/new value to attributed to the choice for the indicator                                                                                                                                                                                                      |
+| reliability\_score              | Reliability score of the data source. From data\_source\_sheet                                                                                                                                                                                                     |
+
+Some information will seem duplicated from one `data_source` to the
+other, but this is to make sure that the package is looking at the right
+place for the information. Indeed, it can sometime be quite difficult to
+organise the data in a way that is always consistent. The approach is
+then to make sure that we are systematically looking in the right place
+for the data.
+
+The `data_source` “SMART-2019” in the [example
+context\_AP](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=1704438982)
+is a good example of this difficult. Indeed, the same datasource
+provides information on multiple administrative unit. It is then
+necessary to split the data into two sheets (admin1 and admin2) so that
+the package can look in the right place and process the data in a
+consistent way.
+
+See the `vignette("setup-workflow")` for more details.
+
+# Main functions
+
+The package is organised around a series of function that take the
+different steps of the analysis process and structure them to have
+consistent processes.
+
+There are 5 families of functions in the package:
+
+  - Clean: clean the datasets
+  - Recode: recode datasets between
+  - Aggregation: aggregate results at a given administrative unit
+  - Score: score datasets according to the WSC\_AP and the twenty
+    percent rule
+  - Analyse: Analyse data to fit into the final outputs
+
+## Clean
+
+Three functions available:
+
+  - `clean_dataset()` and `rec_missing` replace common NA values
+    (‘N/A’,‘n/a’,’ ‘,’(vide)‘,’(empty)‘,’d/m’,’‘,’NA’,‘na’) by a R
+    NA, respectively on a whole dataset or a vector
+  - `normalise_string` removes special characters, spaces, etc. to have
+    a normalised string.
+
+## Recode
+
+*`recode_variable` and `recode_source` take values from the context\_AP
+and rename columns and values to match it, respectivelly for one
+indicator/variable or for a whole data\_source *`rename_vec` rename a
+vector from a list ot another. It is the backbone of the two other
+functions in the family.
+
+## Aggregation
+
+  - `aggregate_admin` Aggregate variables at the specified
+    administrative unit
+  - `agg_score` a specialised version of aggregate\_admin for the WIS
+  - `assign_result_high2low` and `assign_result_low2high` assign results
+    from different level of analysis to the level that we are interested
+    in. For instance, if our level of analysis is admin2 and data is
+    available only at admin1, we assign the data from the admin1 to all
+    the admin2s.
+
+<!-- end list -->
 
 ``` r
-library(WSCprocessing)
-library(knitr)
-
-admin2_twenty_ruled <- twenty_rule(data = score_agg_admin2, col_score = "indicator",
-            col_label = "choice", name_final_score = "score_final",
-            col_agg = "admin2", col_value = "value")
-
-kable(head(admin2_twenty_ruled))
+normalise_string("àaF   kgfk")
 ```
 
-| admin2     | indicator    | context   |  score\_1 |  score\_2 |  score\_3 |  score\_4 |  score\_5 | score\_final |
-| :--------- | :----------- | :-------- | --------: | --------: | --------: | --------: | --------: | :----------- |
-| bale       | score\_final | bfa\_2020 |        NA | 0.3824060 | 0.3978353 | 0.2045352 | 0.0152235 | 4            |
-| bam        | score\_final | bfa\_2020 | 0.0120944 | 0.1990463 | 0.4323360 | 0.3504298 | 0.0060935 | 4            |
-| banwa      | score\_final | bfa\_2020 | 0.0071037 | 0.2419910 | 0.5036909 | 0.2187994 | 0.0284149 | 4            |
-| bazega     | score\_final | bfa\_2020 |        NA | 0.1791556 | 0.5628474 | 0.2579969 |        NA | 4            |
-| bougouriba | score\_final | bfa\_2020 |        NA | 0.1117228 | 0.4725281 | 0.3882772 | 0.0274719 | 4            |
-| boulgou    | score\_final | bfa\_2020 | 0.0444890 | 0.2459820 | 0.4317736 | 0.2777554 |        NA | 4            |
+    ## [1] "aaf_kgfk"
 
-### 4\. assign\_hiAdmin\_loAdmin
+## Analyse
 
-``` r
-library(WSCprocessing)
-library(knitr)
+This is where the russian-dolls concept is the most pertinent as those
+functions are wrappers around each others.
 
-admin1_admin2_agg <- assign_hiAdmin2loAdmin(HiAdmin_df = WSCprocessing::bfa_smart_2019_admin1, HiAdmin_name = "admin1",
-                       HiAdmin_df_name = "smart_2019_admin1",
-                       context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-                       WSC_AP = WSCprocessing::WSC_AP, LoAdmin_df = WSCprocessing::bfa_msna_2020, LoAdmin_name = "admin2")
+  - `analyse_country` analyse the data for a specified country, breaking
+    ties between data sources for a specified indicator.
+  - `analyse_DAP` analyse a DAP, without breaking ties between data
+    sources
+  - `analyse_source_all_sheets` analyse all data in a data source
+  - `analyse_data` analyse a data set
+  - `analyse_var` analyse a variable
 
+# Datasets available in the package
 
+Multiple datasets are available in the package to provide real-life
+examples of how the data can be processed:
 
-kable(head(admin1_admin2_agg))
-```
+  - `bfa_msna_2020` : 2020 Burkina Faso MSNA
+  - `bfa_smart_2019_admin1` : SMART survey data for 2019 in Burkina
+    Faso.
+  - `context_AP` : example of context\_AP object.
 
-| admin2     | indicator | choice | value | context   |
-| :--------- | :-------- | :----- | ----: | :-------- |
-| koulpelogo | gam\_muac | NA     |   2.3 | bfa\_2020 |
-| seno       | gam\_muac | NA     |   3.3 | bfa\_2020 |
-| sanmatenga | gam\_muac | NA     |   2.1 | bfa\_2020 |
-| boulkiemde | gam\_muac | NA     |   2.1 | bfa\_2020 |
-| loroum     | gam\_muac | NA     |   1.2 | bfa\_2020 |
-| yatenga    | gam\_muac | NA     |   1.2 | bfa\_2020 |
+For convenience, those datasets are also loaded:
 
-### 5\. score\_df\_AP
+  - `WSC_AP`
+  - `WIS_water`
+  - `WIS_sanitation`
+  - `WIS_final`
 
-``` r
-library(WSCprocessing)
-library(knitr)
-
-area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1, data_name = "smart_2019_admin1",
-         data_type = "area",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-         WSC_AP = WSCprocessing::WSC_AP)
-
-hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020, data_name = "msna_2020",
-         data_type = "hh",
-         agg_level = "admin1", context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-         WSC_AP = WSCprocessing::WSC_AP)
-
-
-
-kable(head(hh_df))
-```
-
-| admin1              | indicator   | choice |     value | context   |
-| :------------------ | :---------- | :----- | --------: | :-------- |
-| boucle\_du\_mouhoun | rcsi\_score | 1      | 0.6779283 | bfa\_2020 |
-| boucle\_du\_mouhoun | rcsi\_score | 2      | 0.2610477 | bfa\_2020 |
-| boucle\_du\_mouhoun | rcsi\_score | 3      | 0.0610240 | bfa\_2020 |
-| cascades            | rcsi\_score | 1      | 0.6445926 | bfa\_2020 |
-| cascades            | rcsi\_score | 2      | 0.3327372 | bfa\_2020 |
-| cascades            | rcsi\_score | 3      | 0.0226702 | bfa\_2020 |
-
-## About the WSC
+# About the WSC
 
 The WASH Severity Classification (WSC) is a new interagency global
 initiative led by the [Global WASH Cluster](http://washcluster.net/),
@@ -195,6 +291,3 @@ through a participatory process, the WSC project aims to develop a
 standardized approach to classifying the severity of WASH needs and
 vulnerabilities across contexts. For more information, contact
 <wsc@reach-initiative.org>.
-
-As the documentation relating to the WSC is still under development,
-direct links to them are replaced by placeholder\_link.

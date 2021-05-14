@@ -12,12 +12,12 @@ assigned.}
 
 \item{high_df_name}{character string with the name of the
 \code{high_df}. Must follow the format:
-     \code{data_source_name} - \code{data_sheet_name} columns of
+\code{data_source_name} - \code{data_sheet_name} columns of
 \code{context_AP}.}
 
 \item{low_admin}{character string with the name of the
 \code{low_df}. Must follow the format:
-     \code{data_source_name} - \code{data_sheet_name} columns of
+\code{data_source_name} - \code{data_sheet_name} columns of
 \code{context_AP}.}
 
 \item{pop_df}{dataframe containing population figures for each admin unit
@@ -25,24 +25,24 @@ being analysed. This dataframe is used to weight the datasets when
 aggregating from one administrative unit to another.
 The dataframe must contain at a minimum:
 \describe{
-  \item{admin1}{contains names of administrative unit 1: regions,
-  provinces, etc.}
-  \item{admin2}{contains names of administrative unit 2: districts,
-  departments, etc.}
-  \item{total_pop}{contains the population figures associated with each
-  administrative unit}
+\item{admin1}{contains names of administrative unit 1: regions,
+provinces, etc.}
+\item{admin2}{contains names of administrative unit 2: districts,
+departments, etc.}
+\item{total_pop}{contains the population figures associated with each
+administrative unit}
 }
 If additional administrative units are required, the name of the column
 should follow this structure: admin+number (e.g. admin3).
 If left to the default (NULL), the package will try to
-download a dataframe from [HDX](https://data.humdata.org) Common
+download a dataframe from \href{https://data.humdata.org}{HDX} Common
 Operational Datasets (COD). This is a quite hazardous approach as HDX
 COD's are not formatted in a consistent way.}
 
 \item{context_AP}{data.frame with context specific analysis plan (AP) that
 links the indicators in the WSC AP to the datasets used in the context
 analysis.
-See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.}
+See an example \href{https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing}{here} or in \code{WSCprocessing::context_AP}.}
 }
 \value{
 a data.frame with the aggregated data at a lower administrative level
@@ -62,3 +62,10 @@ assign_high2low(high_df = WSCprocessing::bfa_smart_2019_admin1,
     LoAdmin_name = "admin2")
 }
 }
+\seealso{
+Other aggregation functions: 
+\code{\link{agg_score}()},
+\code{\link{aggregate_admin}()},
+\code{\link{assign_result_low2high}()}
+}
+\concept{aggregation functions}

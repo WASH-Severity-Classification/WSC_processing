@@ -4,10 +4,10 @@
 #'
 #' @format A data frame with 228 rows and 15 variables:
 #' \describe{
-#'   \item{Niveau du cadre analytique}{character Niveau/Dimension du cadre analytique comme vu dans le \href{placeholder_link}{cadre analytique CSW}}
-#'   \item{Analytical framework level}{character Analytical framework level/dimension as in the \href{placeholder_link}{WSC analytical framework}}
-#'   \item{Sous-niveau du cadre analytique}{character Sous-niveau/sous-dimension du cadre analytique comme vu dans le \href{placeholder_link}{cadre analytique CSW}. Analytical framework sub-level/sub-dimension as in the \href{placeholder_link}{WSC analytical framework}}
-#'   \item{Analytical framework sub-level}{character Analytical framework sub-level/sub-dimension as in the \href{placeholder_link}{WSC analytical framework}}
+#'   \item{Niveau du cadre analytique}{character Niveau/Dimension du cadre analytique comme vu dans le \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit}{cadre analytique CSW}}
+#'   \item{Analytical framework level}{character Analytical framework level/dimension as in the \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit}{WSC analytical framework}}
+#'   \item{Sous-niveau du cadre analytique}{character Sous-niveau/sous-dimension du cadre analytique comme vu dans le \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit}{cadre analytique CSW}. Analytical framework sub-level/sub-dimension as in the \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit}{WSC analytical framework}}
+#'   \item{Analytical framework sub-level}{character Analytical framework sub-level/sub-dimension as in the \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit}{WSC analytical framework}}
 #'   \item{Indicateur}{character Description complète de l'indicateur. Complete description of the indicator.}
 #'   \item{Indicator}{character Complete description of the indicator.}
 #'   \item{indicator_code}{character Indicator code, as in the WSC analysis plan}

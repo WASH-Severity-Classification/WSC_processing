@@ -1,43 +1,8 @@
 #' Score individual variables
 #'
-#' @param var character string identifying a variable present in \code{survey_hh_data}
-#' @param survey_hh_data a srvyr::as_survey object containing necessary data and
-#'     survey information according to srvyr::as_survey definition.
-#' @param agg_level character string specifying which column should be used to
-#'    aggregate the data. This is is typically an administrative unit (e.g. province,
-#'    region, departement, admin2, etc.)
-#'
-#' @return a data.frame containing the calculated scores
-#'
-#' @importFrom magrittr `%>%`
-#' @import dplyr
-#' @importFrom stringr str_detect
-#' @import srvyr
-#'
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#'  score_var(var = "rsci_score", survey_hh_data = hh_data_scored, "admin1")
-#' }
-#'
-score_var <- function(var, survey_hh_data, agg_level) {
-  survey_hh_data$variables[[var]] <-
-    factor(survey_hh_data$variables[[var]])
-
-  survey_hh_data_calc <- survey_hh_data %>%
-    dplyr::filter(!is.na(!!var)) %>%
-    dplyr::group_by(!!dplyr::sym(agg_level),!!dplyr::sym(var)) %>%
-    dplyr::summarise(value = srvyr::survey_mean(na.rm = TRUE)) %>%
-    dplyr::mutate(indicator = !!var) %>%
-    dplyr::rename(choice = as.character(var)) %>%
-    dplyr::select(!!agg_level, indicator, choice, value)
-
-  return(survey_hh_data_calc)
-}
-
-
-#' Score individual variables
+#' Takes an individual variable and scores it against the scales outlined in the
+#' \code{WSC_AP} in columns "None/ minimal",	"Stressed", "Crisis",	"Critical",
+#' and "Catastrophic".
 #'
 #' @param var character string identifying a variable present in \code{survey_hh_data}
 #' @param survey_hh_data a srvyr::as_survey object containing necessary data and
@@ -52,15 +17,17 @@ score_var <- function(var, survey_hh_data, agg_level) {
 #' @import dplyr
 #' @importFrom stringr str_detect
 #' @import srvyr
+#' @family score functions
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#'  score_var(var = "rsci_score", survey_hh_data = hh_data_scored, "admin1")
+#'  score_variable(var = "rsci_score", survey_hh_data = hh_data_scored,
+#'  agg_level = "admin1")
 #' }
 #'
-score_var <- function(var, survey_hh_data, agg_level) {
+score_variable <- function(var, survey_hh_data, agg_level) {
   survey_hh_data$variables[[var]] <-
     factor(survey_hh_data$variables[[var]])
 
@@ -78,23 +45,9 @@ score_var <- function(var, survey_hh_data, agg_level) {
 
 #' Score dataset according to the Analysis Plan (AP) phases.
 #'
-#' This function scores datasets according to the phases documented in the AP under
-#' the columns None/Minimal to Catastrophic.
+#' This function scores datasets according to the phases documented in the
+#' \code{WSC_AP}  under the columns None/Minimal to Catastrophic.
 #'
-#' @param data data.frame containing the data to be scored
-#' @param data_name character string identifying the name of the data frame used in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.
-#' @param data_sheet_name character string with the name of the \code{sheet_name}
-#' @param data_type character string with the type of data source in \code{data}. Must be "area" or "hh".
-#' @param agg_level character string specifying which column should be used to
-#'    aggregate the data. This is is typically an administrative unit (e.g. province,
-#'    region, departement, admin2, etc.)
-#' @param context character string identifying the context to be used in the function call.
-#'    This is to be used if multiple context (geographical or temporal) are being
-#'    analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
-#'    this column can help distinguish the indicators.
-#' @param context_AP data.frame with context specific analysis plan (AP) that links
-#'    the indicators in the WSC AP to the datasets used in the context analysis.
-#'    See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.
 #' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
 #'
 #' @return a data.frame containing the phase for each administrative level taken
@@ -108,27 +61,16 @@ score_var <- function(var, survey_hh_data, agg_level) {
 #' @importFrom tidyr pivot_longer
 #' @importFrom tidyr separate
 #' @import srvyr
+#' @inherit analyse_data
+#' @family score functions
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' area_df <- score_df_AP(data = WSCprocessing::bfa_smart_2019_admin1,
-#'          data_name = "smart_2019",
-#'          data_sheet_name = "cleaned_data_admin1", data_type = "area",
-#'          agg_level = "admin1", context = "bfa_2020",
-#'          context_AP = WSCprocessing::context_AP,
-#'          WSC_AP = WSCprocessing::WSC_AP)
-#'
-#' hh_df <- score_df_AP(data = WSCprocessing::bfa_msna_2020,
-#'          data_type = "hh", data_name = "bfa_msna_2020",
-#'          data_sheet_name = "BFA_MSNA_2020_dataset_cleanedWeighted_ADM1",
-#'          agg_level = "admin1", context = "bfa_2020",
-#'          context_AP = WSCprocessing::context_AP,
-#'          WSC_AP = WSCprocessing::WSC_AP)
 #'}
 
-score_data_AP <-
+score_source <-
   function(data,
            data_AP,
            WSC_AP = WSCprocessing::WSC_AP,
@@ -196,20 +138,7 @@ score_data_AP <-
         context
       )
 
-    # names(data) <- normalise_string(names(data))
-    #
-    # names(data) <-
-    #   rename_vec(names(data),
-    #       var_names$indicator_code_source,
-    #       var_names$indicator_code)
-
     if (sum(names(data) %in% ap_scaled$indicator_code) == 0) {
-      warning(
-        paste0(
-          ap_scaled$indicator_code,
-          " does not have a scale to provide the phase of the indicator."
-        )
-      )
 
       result <- tibble(!!sym(agg_level):= NA, indicator = NA, choice = NA, value = NA, context = NA)
 
@@ -293,6 +222,13 @@ score_data_AP <-
         hh_indic <-
           unique(ap_scaled$indicator_code[ap_scaled$level == "hh"])
 
+        if(length(hh_indic) == 0){
+          stop(paste0(data_AP$data_source_name, " ", data_AP$data_sheet_name,
+                      ": There is no indicator that can be analysed at household-level.\n
+                      Are you sure you context_AP states the right type of data level?")
+          )
+        }
+
         hh_data_AP <- hh_data %>%
           dplyr::select(dplyr::any_of(hh_indic),
                         !!agg_level,
@@ -356,7 +292,7 @@ score_data_AP <-
 
         addVars_agg_table <-
           lapply(hh_indic_avail,
-                 score_var,
+                 score_variable,
                  survey_hh_data = hh_data_scored,
                  agg_level = agg_level) %>%
           dplyr::bind_rows()

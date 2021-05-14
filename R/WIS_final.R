@@ -1,7 +1,7 @@
 #' Scoring reference matrix for WASH Insecurity Score (WIS) final score
 #'
 #' A dataset containing the scoring reference matrix for WASH Insecurity Score (WIS) final score
-#' For more information on the WIS, please see the \href{placeholder_link}{full calculation model}.
+#' For more information on the WIS, please see the \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit}{full calculation model}.
 #'
 #' @format A data frame with 21 rows and 4 variables:
 #' \describe{

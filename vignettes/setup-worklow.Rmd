@@ -1,0 +1,19 @@
+---
+title: "setup-worklow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{setup-worklow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, cache=TRUE, message=FALSE, echo=FALSE}
+library(WSCprocessing)
+```

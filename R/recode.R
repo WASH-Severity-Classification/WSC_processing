@@ -1,32 +1,28 @@
 #' Recode variable according to the analysis plan
 #'
-#' @param data data.frame containing the data to be recoded
-#' @param variable string containing the name of the variable to be recoded. Must be present in \code{context_AP} in column \code{indicator_code}
-#' @param data_AP data.frame with data specific analysis plan (AP) that links
-#'    the indicators in the WSC AP to the datasets used.
-#'    Most of those parameters are coming from context_AP and are automatically
-#'    passed from analyse_source_all_sheets.
-#'    The dataframe must contain:
-#'    \describe{
-#'       \item{data_sheet_name}{name of the sheet where the data is stored}
-#'       \item{data_worksheet_url}{URL of the worksheet to be used.}
-#'       \item{admin_level}{administrative level unit at which the data will be
-#'           aggregated}
-#'       \item{data_type}{type of data: either hh or area}
-#'       \item{context}{context identifying the time or place where the analysis
-#'           is conducted.}
-#'       \item{indicator_code_source}{list of indicators to be analysed as they
-#'           appear in the original dataset (data)}
-#'       \item{indicator_code}{list of indicators to be analysed as they
-#'           appear in the WSC analytical framework.}
-#'    }
+#' Changes the names of the values and columns so that it matches the analysis
+#' plan layed out in the \code{data_AP}. In pratice, this will mean that column
+#' names in \code{indicator_code_source} will be replaced by the standard names
+#' stored in the \code{indicator_code}. Data values (row values) are replaced by
+#' values stored in \code{score_recoding}.
+#'
+#' @param variable string containing the name of the variable to be recoded.
+#'     Must be present in \code{context_AP} in column \code{indicator_code}
 #' @return data.frame with the variable recoded
+#' @inherit analyse_data
 #' @export
+#' @family recode functions
 #'
 #' @examples
 #' \dontrun{
-#' var_recoded <- recode_variable(data = WSCprocessing::bfa_msna_2020,
-#' variable = "critical_handwashing_times")
+#' bfa_msna <- bfa_smart_2019_admin1
+#' variable = "gam_muac"
+#'
+#' bfa_smart_2019_admin1_AP <- get_dataAP(source_name = "SMART-2019",
+#'     data_sheet_name = "cleaned_data_admin1", context_AP = context_AP)
+#'#'
+#' recode_variable(bfa_smart_2019_admin1_df, variable, bfa_smart_2019_admin1_AP)
+#'
 #' }
 
 recode_variable <-
@@ -108,14 +104,15 @@ recode_variable <-
                    !!sym(duplicated_col):= case_when(
                      sum == 0 ~ FALSE,
                      sum > 0 ~ TRUE,
-                     TRUE ~ na_lgl
+                     TRUE ~ rlang::na_lgl
                    )) %>%
             select(!!duplicated_col)
         }
 
         if(length(duplicated_cols)!=0){
+          duplicated_cols <- unique(duplicated_cols)
           y_filled <- y %>%
-            select(-!!sym(duplicated_cols))%>%
+            select(-!!sym(duplicated_cols)) %>%
             bind_cols(map_dfc(duplicated_cols, ~concate_duplicated_cols(df = y, duplicated_col = .x)))
         }else{
           y_filled <- y
@@ -198,6 +195,31 @@ recode_variable <-
     return(final_y)
   }
 
+#' Recode dataset according to the analysis plan
+#'
+#' This function takes a dataset and its analysis plan to recode the column
+#' names and the values.
+#'
+#' Changes the names of the values and columns so that it matches the analysis
+#' plan layed out in the \code{data_AP}. In pratice, this will mean that column
+#' names in \code{indicator_code_source} will be replaced by the standard names
+#' stored in the \code{indicator_code}. Data values (row values) are replaced by
+#' values stored in \code{score_recoding}.
+#'
+#'
+#' @inherit analyse_data
+#' @param ... other parameters to be passed to the function.
+#' @family recode functions
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' bfa_smart_2019_admin1_AP <- get_dataAP(source_name = "SMART-2019",
+#'     data_sheet_name = "cleaned_data_admin1", context_AP = context_AP)
+#' recoded_smart <- recode_source(bfa_smart_2019_admin1, bfa_smart_2019_admin1_AP)
+#'}
 recode_source <- function(data, data_AP,...){
 
   from <- unlist(data_AP$indicator_code_source)
@@ -229,3 +251,43 @@ recode_source <- function(data, data_AP,...){
     return(data_recoded)
   }
 }
+
+#' Rename a vector according to the lists of parameters provided
+#'
+#' @param vec vector to be renamed
+#' @param from list of values to look for
+#' @param to list of values to change to
+#'
+#' @family recode functions
+#'
+#' @return vector renamed
+#' @export
+#'
+#'
+#' @examples
+#' names(iris)
+#' rename_vec(names(iris), from = "Sepal.Length", to = "Sepal length")
+#'
+rename_vec<-function(vec,from,to){
+  from <-  as.character(from)
+  vec <-  as.character(vec)
+  to <-  as.character(to)
+
+  if(length(from)==length(to)){
+    for (i in 1:length(from)){
+      cond<-which(vec%in%from[i])
+      if(length(cond)>0){
+        if(sum(vec[cond] == from[i]) == length(vec[cond])|sum(is.na(vec[cond]))==length(vec[cond])){
+          vec[cond]<-to[i]
+        }
+        if(length(grep(paste0(from[i], "\\."), vec)) > 0){
+          vec[grep(paste0(from[i], "\\."), vec)] <- gsub(paste0(from[i], "\\."), paste0(to[i],"\\."), vec[grep(paste0(from[i], "\\."), vec)])
+        }
+      }
+    }
+    return(vec)
+  } else {
+    print("from and to must have the same length")
+  }
+}
+

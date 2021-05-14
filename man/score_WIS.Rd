@@ -14,8 +14,29 @@ score_WIS(
 )
 }
 \arguments{
+\item{.data}{data.frame containing the data to be analysed.}
+
+\item{data_AP}{data.frame with data specific analysis plan (AP) that links
+the indicators in the WSC AP to the datasets used.
+Most of those parameters are coming from context_AP and are automatically
+passed from analyse_source_all_sheets.
+The dataframe must contain:
+\describe{
+\item{data_sheet_name}{name of the sheet where the data is stored}
+\item{data_worksheet_url}{URL of the worksheet to be used.}
+\item{admin_level}{administrative level unit at which the data will be
+aggregated}
+\item{data_type}{type of data: either hh or area}
+\item{context}{context identifying the time or place where the analysis
+is conducted.}
+\item{indicator_code_source}{list of indicators to be analysed as they
+appear in the original dataset (data)}
+\item{indicator_code}{list of indicators to be analysed as they
+appear in the WSC analytical framework.}
+}}
+
 \item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be
-found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
+found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (\code{WSCprocessing::WSC_AP})}
 
 \item{WIS_water}{data.frame with the scoring reference matrix for the Water
 component of the WASH Insecurity Score (WIS)}
@@ -25,30 +46,40 @@ Sanitation component of the WIS}
 
 \item{WIS_final}{data.frame with the scoring reference matrix for the final
 score of the WIS}
-
-\item{context_AP}{data.frame with context specific analysis plan (AP) that links
- the indicators in the WSC AP to the datasets used in the context analysis.
-See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSCprocessing::context_AP```.}
-
-\item{context}{Character string identifying the context to be used in the function call.
-This is to be used if multiple context (geographical or temporal) are being
-analysed. For instance, if data is used for Burkina Faso in 2020 and 2019,
-this column can help distinguish the indicators.}
-
-\item{data}{data.frame containing the data to be analysed with the function}
 }
 \value{
 a dataframe containing the results of the scoring for each household
-   in the dataset. NAs are introduced if variables cannot be found or score
-   calculated.
+in the dataset. NAs are introduced if variables cannot be found or score
+calculated.
+
+a data.frame containing the calculated scores
 }
 \description{
-Score WASH Insecurity Score (WIS)
+This function takes a dataset containing data to calculate the WASH
+Insecurity Score (WIS) and calculates it according to the procedures outlined
+in the WSC \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit#}{Implementation handbook}.
+}
+\details{
+The WASH insecurity score (WIS) rests on the recoding of variable so that
+they match the values provided in columns \code{sufficiency_of_water} and
+\code{water_source_dist} in the \href{https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit#gid=0}{WIS_water}
+matrix, and the columns \code{type_of_sanitation_facility},
+\code{sanitation_facility_sharing}, and \code{access_to_soap} in the
+\href{https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit#gid=953151630}{WIS_santiation}
+matrix. The intersection of the two matrices is then calculated with
+\href{https://docs.google.com/spreadsheets/d/1UCr-G9gD6YZmiOHDoP95qiMkEqi9jMG3lfzzv7WCFnM/edit#gid=120011495}{WIS_final}
 }
 \examples{
 \dontrun{
-score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP = WSCprocessing::context_AP, context = "bfa_2020",
-         WSC_AP = WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation = WSCprocessing::WIS_sanitation,
-         WIS_final = WSCprocessing::WIS_final)
+score_WIS(data = WSCprocessing::bfa_msna_2020, context_AP =
+WSCprocessing::context_AP, context = "bfa_2020", WSC_AP =
+WSCprocessing::WSC_AP, WIS_water = WSCprocessing::WIS_water, WIS_sanitation =
+WSCprocessing::WIS_sanitation, WIS_final = WSCprocessing::WIS_final) }
 }
+\seealso{
+Other score functions: 
+\code{\link{score_source}()},
+\code{\link{score_variable}()},
+\code{\link{twenty_rule}()}
 }
+\concept{score functions}

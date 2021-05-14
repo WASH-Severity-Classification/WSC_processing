@@ -7,10 +7,10 @@
 \format{
 A data frame with 21 rows and 4 variables:
 \describe{
-  \item{water_score}{Score value as calculated through the \link{WIS_water} reference matrix}
-  \item{sanit_score}{Score value as calculated through the \link{WIS_sanitation} reference matrix}
-  \item{key_score}{Key to uniquely identify combinaison of water_score and sanit_score}
-  \item{score}{Final WIS score}
+\item{water_score}{Score value as calculated through the \link{WIS_water} reference matrix}
+\item{sanit_score}{Score value as calculated through the \link{WIS_sanitation} reference matrix}
+\item{key_score}{Key to uniquely identify combinaison of water_score and sanit_score}
+\item{score}{Final WIS score}
 }
 }
 \source{
@@ -21,6 +21,6 @@ WIS_final
 }
 \description{
 A dataset containing the scoring reference matrix for WASH Insecurity Score (WIS) final score
-For more information on the WIS, please see the \href{placeholder_link}{full calculation model}.
+For more information on the WIS, please see the \href{https://docs.google.com/document/d/1ikSd_3KMOyhJ8pTr5BLXlLZ92y6h5ZpjEeyPxFilxN8/edit}{full calculation model}.
 }
 \keyword{datasets}
