@@ -25,7 +25,7 @@ this column can help distinguish the indicators.}
 
 \item{context_AP}{data.frame with context specific analysis plan (AP) that links
 the indicators in the WSC AP to the datasets used in the context analysis.
-See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in \code{WSCprocessing::context_AP}.}
+See an example \href{https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing}{here} or in \code{WSCprocessing::context_AP}.}
 
 \item{agg_level}{character string specifying which column should be used to
 aggregate the data. This is is typically an administrative unit (e.g. province,
@@ -34,7 +34,7 @@ region, departement, admin2, etc.)}
 \item{data_name}{character string identifying the name of the data frame used
 in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.}
 
-\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
+\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (\code{WSCprocessing::WSC_AP})}
 
 \item{weights}{string containing the column name where weights are stored.}
 
@@ -44,7 +44,7 @@ in \code{data}. Should be equivalent to the \code{data_source_name} called in \c
 data.frame containing the aggregated data according to context_AP and WSC_AP
 }
 \description{
-Aggregate variables at the specified administrative unit
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
 }
 \examples{
 \dontrun{

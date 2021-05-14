@@ -7,7 +7,7 @@
 aggregate_admin(data, data_AP, ...)
 }
 \arguments{
-\item{data}{data.frame containing the data to be aggregated}
+\item{data}{data.frame containing the data to be analysed.}
 
 \item{data_AP}{data.frame with data specific analysis plan (AP) that links
 the indicators in the WSC AP to the datasets used.
@@ -15,17 +15,17 @@ Most of those parameters are coming from context_AP and are automatically
 passed from analyse_source_all_sheets.
 The dataframe must contain:
 \describe{
-   \item{data_sheet_name}{name of the sheet where the data is stored}
-   \item{data_worksheet_url}{URL of the worksheet to be used.}
-   \item{admin_level}{administrative level unit at which the data will be
-       aggregated}
-   \item{data_type}{type of data: either hh or area}
-   \item{context}{context identifying the time or place where the analysis
-       is conducted.}
-   \item{indicator_code_source}{list of indicators to be analysed as they
-       appear in the original dataset (data)}
-   \item{indicator_code}{list of indicators to be analysed as they
-       appear in the WSC analytical framework.}
+\item{data_sheet_name}{name of the sheet where the data is stored}
+\item{data_worksheet_url}{URL of the worksheet to be used.}
+\item{admin_level}{administrative level unit at which the data will be
+aggregated}
+\item{data_type}{type of data: either hh or area}
+\item{context}{context identifying the time or place where the analysis
+is conducted.}
+\item{indicator_code_source}{list of indicators to be analysed as they
+appear in the original dataset (data)}
+\item{indicator_code}{list of indicators to be analysed as they
+appear in the WSC analytical framework.}
 }}
 
 \item{...}{parameters to be passed to other functions, must be following the
@@ -35,10 +35,31 @@ format of a named list (e.g. WSC_AP = this_df)}
 data.frame containing the aggregated data to the data_AP
 }
 \description{
-Aggregate variables at the specified administrative unit
+This function analyse one data source according to the analysis plan provided
+in data_AP, which is short for data analysis plan. \code{data_AP} is a
+filtered and standardised version of context_AP for a specific dataset.
+}
+\details{
+This function differs from \code{\link[=analyse_source_all_sheets]{analyse_source_all_sheets()}} and \code{\link[=analyse_DAP]{analyse_DAP()}}
+as it takes a unique data source rather than walking over multiple datasets.
+
+#' The individual variables in the dataset are analysed with a weighted mean of
+if it is a numerical  variable, or the weighted mean frequency of its factors
+if it is a  character/factor variable.
 }
 \examples{
 \dontrun{
-agg_admin2 <- aggregate_admin()
+
+this_data_AP <- get_dataAP("REACH-MSNA-2020", NA, context_AP)
+
+data_cleaned <- recode_source(bfa_msna_2020, data_AP = this_data_AP)
+agg_admin2 <- aggregate_admin(data_cleaned, this_data_AP)
 }
 }
+\seealso{
+Other aggregation functions: 
+\code{\link{agg_score}()},
+\code{\link{assign_result_high2low}()},
+\code{\link{assign_result_low2high}()}
+}
+\concept{aggregation functions}

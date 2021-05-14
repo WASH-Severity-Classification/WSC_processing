@@ -1,5 +1,7 @@
 #' Aggregate variables at the specified administrative unit
 #'
+#' `r lifecycle::badge("deprecated")`
+#'
 #' @param data data.frame containing the data to be aggregated
 #' @param context character string identifying the context to be used in the function call.
 #'    This is to be used if multiple context (geographical or temporal) are being
@@ -46,6 +48,9 @@ admin_agg <-
            WSC_AP ,
            weights = NULL,
            data_sheet_name = NULL) {
+
+    lifecycle::deprecate_warn("0.3.0", "admin_agg()", "aggregate_admin()")
+
     if (is.null(data_sheet_name)) {
       full_AP <- context_AP %>%
         dplyr::filter(context == !!context) %>%
@@ -224,6 +229,8 @@ admin_agg <-
 
 #' Score individual variables
 #'
+#' `r lifecycle::badge("deprecated")`
+#'
 #' @param var character string identifying a variable present in \code{survey_hh_data}
 #' @param survey_hh_data a srvyr::as_survey object containing necessary data and
 #'     survey information according to srvyr::as_survey definition.
@@ -244,6 +251,9 @@ admin_agg <-
 #' }
 #'
 score_var <- function(var, survey_hh_data, agg_level) {
+
+  lifecycle::deprecate_warn("0.3.0", "score_var()", "score_variable()")
+
   survey_hh_data$variables[[var]] <-
     factor(survey_hh_data$variables[[var]])
 
@@ -263,6 +273,8 @@ score_var <- function(var, survey_hh_data, agg_level) {
 #'
 #' This function scores datasets according to the phases documented in the AP under
 #' the columns None/Minimal to Catastrophic.
+#'
+#' `r lifecycle::badge("deprecated")`
 #'
 #' @param data data.frame containing the data to be scored
 #' @param data_name character string identifying the name of the data frame used in \code{data}. Should be equivalent to the \code{data_source_name} called in \code{context_AP}.
@@ -324,6 +336,9 @@ score_df_AP <-
     if (is.null(data_type) || !data_type %in% c("area", "hh")) {
       stop("data_type must be either 'area' or 'hh'")
     }
+
+    lifecycle::deprecate_warn("0.3.0", "score_df_AP()", "score_source()")
+
 
     data_name_unique <-
       dplyr::case_when(
@@ -588,6 +603,8 @@ score_df_AP <-
 #' communes, this function can help to bring data available only at the
 #' region-level to a province-level data set.
 #'
+#' `r lifecycle::badge("deprecated")`
+#'
 #'
 #' @param HiAdmin_df data.frame with the higher administrative unit data
 #' @param HiAdmin_df_name character string with the name of the
@@ -644,6 +661,9 @@ assign_hiAdmin2loAdmin <-
            WSC_AP,
            LoAdmin_df,
            LoAdmin_name) {
+
+    lifecycle::deprecate_warn("0.3.0", "assign_hiAdmin2loAdmin()", "assign_result_high2low()")
+
     full_AP <- context_AP %>%
       dplyr::mutate(
         unique_data_source_name = dplyr::case_when(

@@ -46,6 +46,7 @@
 #' @import dplyr
 #' @importFrom stringr str_detect
 #' @import srvyr
+#' @family aggregation functions
 #'
 #' @export
 #'
@@ -78,10 +79,10 @@ assign_result_high2low <-
 
     low_admin_n <- as.numeric(str_extract(low_admin, "[0-9]"))
 
-    # data_pop_df <- pop_df %>%
-    #   select(paste0("admin", rep(0:high_admin_n)),
-    #          any_of(paste0("admin", rep(0:high_admin_n), "_pcode")),
-    #          total_pop)
+    data_pop_df <- pop_df %>%
+      select(paste0("admin", rep(0:high_admin_n)),
+             any_of(paste0("admin", rep(0:high_admin_n), "_pcode")),
+             total_pop)
     #
     # weigths_df <- data_pop_df %>%
     #   group_by(!!sym(paste0("admin", low_admin_n-1))) %>%
@@ -92,6 +93,13 @@ assign_result_high2low <-
     highest_pop_level <- min(as.numeric(str_extract(names(data_pop_df), "[0-9]")), na.rm = TRUE)
     highest_agg_level <- min(as.numeric(str_extract(names(high_df), "[0-9]")), na.rm = T)
     highest_both <- max(highest_pop_level, highest_agg_level)
+
+    admins_empty_high_n <- unique(str_extract(names(high_df), paste0("[",highest_agg_level+1,"-9]")))[!is.na(unique(str_extract(names(high_df), paste0("[",highest_agg_level+1,"-9]"))))]
+
+    admins_nas_high <- paste0("admin",admins_empty_high_n)
+
+    high_df <- high_df %>%
+      select(-all_of(admins_nas_high))
 
     low_df <- pop_df %>%
       select(paste0("admin", rep(highest_pop_level:low_admin_n))) %>%
@@ -148,6 +156,7 @@ assign_result_high2low <-
 #' @import dplyr
 #' @importFrom stringr str_detect
 #' @import srvyr
+#' @family aggregation functions
 #'
 #' @export
 #'
@@ -198,8 +207,10 @@ assign_result_low2high <-
     source <- unique(full_AP$unique_data_source_name)
     context <- unique(full_AP$context)
 
+    group_by_adms <- as_vector(paste0("admin", rep(highest_agg_level:high_admin_n)))
+
     high_df <- low_df_weighted %>%
-      group_by(!!sym(paste0("admin", rep(highest_agg_level:high_admin_n))), indicator, choice) %>%
+      group_by(across(group_by_adms), indicator, choice) %>%
       summarise(value = weighted.mean(as.numeric(value), w = weights),
                 source = !!source, context = !!context, .groups = "drop")
 

@@ -2,62 +2,87 @@
 % Please edit documentation in R/aggregation.R
 \name{agg_score}
 \alias{agg_score}
-\title{Aggregate scores at specified aggregation level}
+\title{Aggregate WIS scores at specified aggregation level}
 \usage{
 agg_score(
   .data,
   data_AP,
-  WIS_water = WSCprocessing::WIS_water,
-  WIS_sanitation = WSCprocessing::WIS_sanitation,
-  WIS_final = WSCprocessing::WIS_final,
+  .WIS_water = WSCprocessing::WIS_water,
+  .WIS_sanitation = WSCprocessing::WIS_sanitation,
+  .WIS_final = WSCprocessing::WIS_final,
   ...
 )
 }
 \arguments{
-\item{WIS_water}{data.frame with the scoring reference matrix for the Water
+\item{.data}{data.frame containing the data to be analysed with the function.
+Must have been cleaned with \code{\link[=recode_source]{recode_source()}}. This is to avoid any
+problems with links between the \code{data_AP} and the \code{.data}.}
+
+\item{data_AP}{data.frame with data specific analysis plan (AP) that links
+the indicators in the WSC AP to the datasets used.
+Most of those parameters are coming from context_AP and are automatically
+passed from analyse_source_all_sheets.
+The dataframe must contain:
+\describe{
+\item{data_sheet_name}{name of the sheet where the data is stored}
+\item{data_worksheet_url}{URL of the worksheet to be used.}
+\item{admin_level}{administrative level unit at which the data will be
+aggregated}
+\item{data_type}{type of data: either hh or area}
+\item{context}{context identifying the time or place where the analysis
+is conducted.}
+\item{indicator_code_source}{list of indicators to be analysed as they
+appear in the original dataset (data)}
+\item{indicator_code}{list of indicators to be analysed as they
+appear in the WSC analytical framework.}
+}}
+
+\item{.WIS_water}{data.frame with the scoring reference matrix for the Water
 component of the WASH Insecurity Score (WIS)}
 
-\item{WIS_sanitation}{data.frame with the scoring reference matrix for the
+\item{.WIS_sanitation}{data.frame with the scoring reference matrix for the
 Sanitation component of the WIS}
 
-\item{WIS_final}{data.frame with the scoring reference matrix for the final
+\item{.WIS_final}{data.frame with the scoring reference matrix for the final
 score of the WIS}
 
-\item{data}{data.frame containing the data to be analysed with the function}
-
-\item{data_name}{character string identifying the name of the data frame used
-in \code{data}. Should be equivalent to the \code{data_source_name}
-called in \code{context_AP}.}
-
-\item{context}{Character string identifying the context to be used in the
-function call. This is to be used if multiple context (geographical or
-temporal) are being analysed. For instance, if data is used for Burkina
-Faso in 2020 and 2019, this column can help distinguish the indicators.}
-
-\item{context_AP}{data.frame with context specific analysis plan (AP) that
-links the indicators in the WSC AP to the datasets used in the context
-analysis.
-See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSCprocessing::context_AP```.}
-
-\item{WSC_AP}{data.frame with the general WSC analysis plan (AP) than can be
-found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)}
-
-\item{agg_level}{character string specifying which column should be used to
-aggregate the data. This is is typically an administrative unit (e.g.
-province, region, departement, admin2, etc.)}
+\item{...}{parameters to be passed to other functions, must be following the
+format of a named list (e.g. WSC_AP = this_df).}
 }
 \value{
-data.frame containing the aggregated data according to context_AP and
-   WSC_AP
+data.frame containing the aggregated score according to context_AP
+and WSC_AP
 }
 \description{
-Aggregate scores at specified aggregation level
+This function analyse one data source according to the analysis plan provided
+in data_AP, which is short for data analysis plan. \code{data_AP} is a
+filtered and standardised version of context_AP for a specific dataset.
+}
+\details{
+This function differs from \code{\link[=analyse_source_all_sheets]{analyse_source_all_sheets()}} and \code{\link[=analyse_DAP]{analyse_DAP()}}
+as it takes a unique data source rather than walking over multiple datasets.
+
+#' The individual variables in the dataset are analysed with a weighted mean of
+if it is a numerical  variable, or the weighted mean frequency of its factors
+if it is a  character/factor variable.
 }
 \examples{
 \dontrun{
-agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-          data_name = "bfa_msna_2020",
-          WSC_AP = WSCprocessing::WSC_AP,
-          data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
+
+# Getting the data analysis plan
+this_data_AP <- get_dataAP("REACH-MSNA-2020", NA, context_AP)
+
+data_cleaned <- recode_source(bfa_msna_2020, data_AP = this_data_AP)
+
+result <- agg_score(.data = data_cleaned,
+     data_AP = this_data_AP,
+     context_AP = WSCprocessing::context_AP)
 }
 }
+\seealso{
+Other aggregation functions: 
+\code{\link{aggregate_admin}()},
+\code{\link{assign_result_high2low}()},
+\code{\link{assign_result_low2high}()}
+}
+\concept{aggregation functions}

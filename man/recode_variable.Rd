@@ -7,9 +7,10 @@
 recode_variable(data, variable, data_AP)
 }
 \arguments{
-\item{data}{data.frame containing the data to be recoded}
+\item{data}{data.frame containing the data to be analysed.}
 
-\item{variable}{string containing the name of the variable to be recoded. Must be present in \code{context_AP} in column \code{indicator_code}}
+\item{variable}{string containing the name of the variable to be recoded.
+Must be present in \code{context_AP} in column \code{indicator_code}}
 
 \item{data_AP}{data.frame with data specific analysis plan (AP) that links
 the indicators in the WSC AP to the datasets used.
@@ -17,28 +18,52 @@ Most of those parameters are coming from context_AP and are automatically
 passed from analyse_source_all_sheets.
 The dataframe must contain:
 \describe{
-   \item{data_sheet_name}{name of the sheet where the data is stored}
-   \item{data_worksheet_url}{URL of the worksheet to be used.}
-   \item{admin_level}{administrative level unit at which the data will be
-       aggregated}
-   \item{data_type}{type of data: either hh or area}
-   \item{context}{context identifying the time or place where the analysis
-       is conducted.}
-   \item{indicator_code_source}{list of indicators to be analysed as they
-       appear in the original dataset (data)}
-   \item{indicator_code}{list of indicators to be analysed as they
-       appear in the WSC analytical framework.}
+\item{data_sheet_name}{name of the sheet where the data is stored}
+\item{data_worksheet_url}{URL of the worksheet to be used.}
+\item{admin_level}{administrative level unit at which the data will be
+aggregated}
+\item{data_type}{type of data: either hh or area}
+\item{context}{context identifying the time or place where the analysis
+is conducted.}
+\item{indicator_code_source}{list of indicators to be analysed as they
+appear in the original dataset (data)}
+\item{indicator_code}{list of indicators to be analysed as they
+appear in the WSC analytical framework.}
 }}
 }
 \value{
 data.frame with the variable recoded
 }
 \description{
-Recode variable according to the analysis plan
+Changes the names of the values and columns so that it matches the analysis
+plan layed out in the \code{data_AP}. In pratice, this will mean that column
+names in \code{indicator_code_source} will be replaced by the standard names
+stored in the \code{indicator_code}. Data values (row values) are replaced by
+values stored in \code{score_recoding}.
+}
+\details{
+This function differs from \code{\link[=analyse_source_all_sheets]{analyse_source_all_sheets()}} and \code{\link[=analyse_DAP]{analyse_DAP()}}
+as it takes a unique data source rather than walking over multiple datasets.
+
+#' The individual variables in the dataset are analysed with a weighted mean of
+if it is a numerical  variable, or the weighted mean frequency of its factors
+if it is a  character/factor variable.
 }
 \examples{
 \dontrun{
-var_recoded <- recode_variable(data = WSCprocessing::bfa_msna_2020,
-variable = "critical_handwashing_times")
+bfa_msna <- bfa_smart_2019_admin1
+variable = "gam_muac"
+
+bfa_smart_2019_admin1_AP <- get_dataAP(source_name = "SMART-2019",
+    data_sheet_name = "cleaned_data_admin1", context_AP = context_AP)
+#'
+recode_variable(bfa_smart_2019_admin1_df, variable, bfa_smart_2019_admin1_AP)
+
 }
 }
+\seealso{
+Other recode functions: 
+\code{\link{recode_source}()},
+\code{\link{rename_vec}()}
+}
+\concept{recode functions}

@@ -1,52 +1,45 @@
-#' Aggregate scores at specified aggregation level
+#' Aggregate WIS scores at specified aggregation level
 #'
-#' @param data data.frame containing the data to be analysed with the function
-#' @param data_name character string identifying the name of the data frame used
-#'      in \code{data}. Should be equivalent to the \code{data_source_name}
-#'      called in \code{context_AP}.
-#' @param context Character string identifying the context to be used in the
-#'     function call. This is to be used if multiple context (geographical or
-#'     temporal) are being analysed. For instance, if data is used for Burkina
-#'     Faso in 2020 and 2019, this column can help distinguish the indicators.
-#' @param context_AP data.frame with context specific analysis plan (AP) that
-#'     links the indicators in the WSC AP to the datasets used in the context
-#'     analysis.
-#'     See an example [here](https://docs.google.com/spreadsheets/d/1Pv1BBf32faE6J5tryubhVOsQJfGXaDb2t23KWGab52U/edit?usp=sharing) or in ```WSCprocessing::context_AP```.
-#' @param WSC_AP data.frame with the general WSC analysis plan (AP) than can be
-#'     found \href{https://docs.google.com/spreadsheets/d/1TKxD_DyBTTN6onxYiooqtcI_TVSwPfeE-t7ZHK1zzMU/edit?usp=sharing}{here} or as an object in the package (```WSCprocessing::WSC_AP```)
-#' @param WIS_water data.frame with the scoring reference matrix for the Water
+#' @param .data data.frame containing the data to be analysed with the function.
+#'      Must have been cleaned with [recode_source()]. This is to avoid any
+#'      problems with links between the \code{data_AP} and the \code{.data}.
+#' @param .WIS_water data.frame with the scoring reference matrix for the Water
 #'     component of the WASH Insecurity Score (WIS)
-#' @param WIS_sanitation data.frame with the scoring reference matrix for the
+#' @param .WIS_sanitation data.frame with the scoring reference matrix for the
 #'     Sanitation component of the WIS
-#' @param WIS_final data.frame with the scoring reference matrix for the final
+#' @param .WIS_final data.frame with the scoring reference matrix for the final
 #'     score of the WIS
-#' @param agg_level character string specifying which column should be used to
-#'     aggregate the data. This is is typically an administrative unit (e.g.
-#'     province, region, departement, admin2, etc.)
+#' @inherit analyse_data
 #'
-#' @return data.frame containing the aggregated data according to context_AP and
-#'    WSC_AP
+#' @return data.frame containing the aggregated score according to context_AP
+#'    and WSC_AP
 #' @export
 #'
 #' @import magrittr
 #' @import dplyr
 #' @importFrom stringr str_detect
 #' @import srvyr
+#' @family aggregation functions
 #'
 #' @examples
 #' \dontrun{
-#' agg_score(context = "bfa_2020", context_AP = WSCprocessing::context_AP,
-#'           data_name = "bfa_msna_2020",
-#'           WSC_AP = WSCprocessing::WSC_AP,
-#'           data = WSCprocessing::bfa_msna_2020, agg_level = "admin2")
+#'
+#' # Getting the data analysis plan
+#' this_data_AP <- get_dataAP("REACH-MSNA-2020", NA, context_AP)
+#'
+#' data_cleaned <- recode_source(bfa_msna_2020, data_AP = this_data_AP)
+#'
+#' result <- agg_score(.data = data_cleaned,
+#'      data_AP = this_data_AP,
+#'      context_AP = WSCprocessing::context_AP)
 #'}
 
 agg_score <-
   function(.data,
            data_AP,
-           WIS_water = WSCprocessing::WIS_water,
-           WIS_sanitation = WSCprocessing::WIS_sanitation,
-           WIS_final = WSCprocessing::WIS_final,
+           .WIS_water = WSCprocessing::WIS_water,
+           .WIS_sanitation = WSCprocessing::WIS_sanitation,
+           .WIS_final = WSCprocessing::WIS_final,
            ...) {
 
     if(is.null(WSC_AP)){
@@ -71,9 +64,9 @@ agg_score <-
         .data = .data,
         data_AP = data_AP,
         WSC_AP = WSC_AP,
-        WIS_water = WIS_water,
-        WIS_sanitation = WIS_sanitation,
-        WIS_final = WIS_final
+        WIS_water = .WIS_water,
+        WIS_sanitation = .WIS_sanitation,
+        WIS_final = .WIS_final
       ) %>%
       as_tibble() %>%
       dplyr::mutate(
@@ -107,11 +100,11 @@ agg_score <-
       weights <- weights_ap
     }
 
-    cluster_id <-
+    sampling_id <-
       full_AP$indicator_code[full_AP$indicator_code %in% c("cluster_id")]
 
-    if (length(cluster_id) == 0) {
-      cluster_id <- NULL
+    if (length(sampling_id) == 0) {
+      sampling_id <- NULL
     }
 
     agg_level <- data_AP$admin_level
@@ -119,11 +112,10 @@ agg_score <-
       data_scoring[[agg_level]] <- .data[[agg_level]]
     }
 
-
     ### Formating data_scoring
-    design_data_scoring <-data_scoring %>%
+    design_data <-data_scoring %>%
       dplyr::mutate(!!sym(weights) := as.numeric(!!sym(weights))) %>%
-      srvyr::as_survey_design(ids = !!cluster_id,
+      srvyr::as_survey_design(ids = !!sampling_id,
                               weights = !!weights) %>%
       dplyr::mutate(water_score = as.factor(water_score),
                     sanit_score = as.factor(sanit_score))
@@ -136,72 +128,49 @@ agg_score <-
       "score_final",
       "key_score"
     )
-
+    #
     score_agg_table <-
       data.frame(indicator = NA,
                  choice = NA,
                  value = NA)
 
-    for (i in 1:length(var_to_analyse)) {
-      if (class(design_data_scoring$variables[[var_to_analyse[i]]]) %in% c("factor", "character")) {
-        design_data_scoring$variables[[var_to_analyse[i]]] <-
-          factor(design_data_scoring$variables[[var_to_analyse[i]]])
-        score_agg_table <- design_data_scoring %>%
-          dplyr::filter(!is.na(!!dplyr::sym(var_to_analyse[i]))) %>%
-          dplyr::group_by(!!dplyr::sym(agg_level),
-                          !!dplyr::sym(var_to_analyse[i])) %>%
-          dplyr::summarise(value = srvyr::survey_mean(na.rm = TRUE)) %>%
-          dplyr::mutate(indicator = var_to_analyse[i]) %>%
-          dplyr::rename(choice = as.character(var_to_analyse[i])) %>%
-          dplyr::select(!!agg_level, indicator, choice, value) %>%
-          dplyr::bind_rows(score_agg_table)
-      } else{
-        score_agg_table <- design_data_scoring %>%
-          dplyr::filter(!is.na(!!dplyr::sym(var_to_analyse[i]))) %>%
-          dplyr::group_by(!!dplyr::sym(agg_level)) %>%
-          dplyr::summarise(
-            !!dplyr::sym(var_to_analyse[i]) := srvyr::survey_mean(!!dplyr::sym(var_to_analyse[i]), na.rm = TRUE)
-          ) %>%
-          dplyr::mutate(
-            indicator = var_to_analyse[i],
-            choice = NA,
-            value = !!dplyr::sym(var_to_analyse[i])
-          ) %>%
-          dplyr::select(!!agg_level, indicator, choice, value) %>%
-          dplyr::bind_rows(score_agg_table)
+    reduced_data <- data_scoring %>%
+      dplyr::select(weights, !!sampling_id,data_AP$admin_level, starts_with(var_to_analyse))
 
-      }
+    if (nrow(reduced_data) == 1) {
+      addVars_agg_table <- reduced_data %>%
+        dplyr::select(-weights,-sampling_id) %>%
+        dplyr::group_by(!!sym(agg_level)) %>%
+        tidyr::pivot_longer(-!!agg_level, names_to = "indicator", values_to = "value") %>%
+        dplyr::mutate(choice = NA,
+                      context = context) %>%
+        dplyr::select(!!agg_level, indicator, choice, value, context)
+
+      return(addVars_agg_table)
     }
 
-    score_agg_table[[agg_level]] <- normalise_string(score_agg_table[[agg_level]])
+    addVars_agg_table <-
+      data.frame(
+        admin2 = NA,
+        indicator = NA,
+        choice = NA,
+        value = NA
+      )
 
-    score_agg_table$context <- unique(data_AP$context)
+    analysed_var <- map_dfr(var_to_analyse,
+                            ~analyse_var(design_data = design_data,
+                                         var_analyse =. ,
+                                         agg_level= agg_level))
 
-    return(score_agg_table)
+    analysed_var[[agg_level]] <- normalise_string(analysed_var[[agg_level]])
+
+    analysed_var$context <- unique(data_AP$context)
+
+    return(analysed_var)
   }
 
 
 #' Aggregate variables at the specified administrative unit
-#'
-#' @param data data.frame containing the data to be aggregated
-#' @param data_AP data.frame with data specific analysis plan (AP) that links
-#'    the indicators in the WSC AP to the datasets used.
-#'    Most of those parameters are coming from context_AP and are automatically
-#'    passed from analyse_source_all_sheets.
-#'    The dataframe must contain:
-#'    \describe{
-#'       \item{data_sheet_name}{name of the sheet where the data is stored}
-#'       \item{data_worksheet_url}{URL of the worksheet to be used.}
-#'       \item{admin_level}{administrative level unit at which the data will be
-#'           aggregated}
-#'       \item{data_type}{type of data: either hh or area}
-#'       \item{context}{context identifying the time or place where the analysis
-#'           is conducted.}
-#'       \item{indicator_code_source}{list of indicators to be analysed as they
-#'           appear in the original dataset (data)}
-#'       \item{indicator_code}{list of indicators to be analysed as they
-#'           appear in the WSC analytical framework.}
-#'    }
 #'
 #' @param ... parameters to be passed to other functions, must be following the
 #'     format of a named list (e.g. WSC_AP = this_df)
@@ -217,11 +186,19 @@ agg_score <-
 #' @importFrom tidyr separate
 #' @import srvyr
 #'
+#' @inherit analyse_data
+#' @family aggregation functions
+#'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' agg_admin2 <- aggregate_admin()
+#'
+#' this_data_AP <- get_dataAP("REACH-MSNA-2020", NA, context_AP)
+#'
+#' data_cleaned <- recode_source(bfa_msna_2020, data_AP = this_data_AP)
+
+#' agg_admin2 <- aggregate_admin(data_cleaned, this_data_AP)
 #' }
 
 aggregate_admin <-
@@ -277,14 +254,6 @@ aggregate_admin <-
                 ids = !!sampling_id,
                 weights = !!weights)
 
-    addVars_agg_table <-
-      data.frame(
-        admin2 = NA,
-        indicator = NA,
-        choice = NA,
-        value = NA
-      )
-
     select_multiple_in_data <-
       butteR::auto_detect_select_multiple(design_data$variables)
     select_multiples_in_var_to_analyse <-
@@ -315,36 +284,11 @@ aggregate_admin <-
       var_to_analyse <- var_to_analyse
     }
 
-    analyse_var <- function(var_analyse) {
-      if (class(design_data$variables[[var_analyse]]) %in% c("factor", "character")) {
-        design_data$variables[[var_analyse]] <-
-          factor(design_data$variables[[var_analyse]])
-        addVars_agg_table <- design_data %>%
-          dplyr::filter(!is.na(!!dplyr::sym(var_analyse))) %>%
-          dplyr::group_by(!!dplyr::sym(agg_level), !!dplyr::sym(var_analyse)) %>%
-          dplyr::summarise(value = srvyr::survey_mean(na.rm = TRUE)) %>%
-          dplyr::mutate(indicator = var_analyse) %>%
-          dplyr::rename(choice = as.character(var_analyse)) %>%
-          dplyr::select(!!agg_level, indicator, choice, value) %>%
-          dplyr::bind_rows(addVars_agg_table)
-      } else{
-        addVars_agg_table <- design_data %>%
-          dplyr::filter(!is.na(!!dplyr::sym(var_analyse))) %>%
-          dplyr::group_by(!!dplyr::sym(agg_level)) %>%
-          dplyr::summarise(!!dplyr::sym(var_analyse) := srvyr::survey_mean(!!dplyr::sym(var_analyse), na.rm = TRUE)) %>%
-          dplyr::mutate(
-            indicator = var_analyse,
-            choice = NA,
-            value = !!dplyr::sym(var_analyse)
-          ) %>%
-          dplyr::select(!!agg_level, indicator, choice, value) %>%
-          dplyr::bind_rows(addVars_agg_table)
-      }
-      return(addVars_agg_table)
-    }
 
-    analysed_var <- lapply(var_to_analyse, analyse_var) %>%
-      dplyr::bind_rows()
+    analysed_var <- map_dfr(var_to_analyse,
+                            ~analyse_var(design_data = design_data,
+                                         var_analyse =. ,
+                                         agg_level= agg_level))
 
     analysed_var <-
       analysed_var[rowSums(is.na(analysed_var)) != ncol(analysed_var),]
