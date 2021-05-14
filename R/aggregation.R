@@ -41,22 +41,19 @@ agg_score <-
            .WIS_sanitation = WSCprocessing::WIS_sanitation,
            .WIS_final = WSCprocessing::WIS_final,
            ...) {
-
-    if(is.null(WSC_AP)){
-      if(is.null(params$WSC_AP)){
+    if (is.null(WSC_AP)) {
+      if (is.null(params$WSC_AP)) {
         WSC_AP <- WSCprocessing::WSC_AP
-      }else{
+      } else{
         WSC_AP <- params$WSC_AP
       }
     }
 
 
-    full_AP <- data_AP%>%
+    full_AP <- data_AP %>%
       tidyr::unnest(cols = where(is.list)) %>%
       dplyr::left_join(WSC_AP, by = "indicator_code") %>%
-      dplyr::mutate(
-        indicator_code_source = normalise_string(indicator_code_source)
-      ) %>%
+      dplyr::mutate(indicator_code_source = normalise_string(indicator_code_source)) %>%
       distinct()
 
     data_scoring <-
@@ -108,12 +105,13 @@ agg_score <-
     }
 
     agg_level <- data_AP$admin_level
-    if(!agg_level%in% names(data_scoring) & agg_level %in% names(.data)){
+    if (!agg_level %in% names(data_scoring) &
+        agg_level %in% names(.data)) {
       data_scoring[[agg_level]] <- .data[[agg_level]]
     }
 
     ### Formating data_scoring
-    design_data <-data_scoring %>%
+    design_data <- data_scoring %>%
       dplyr::mutate(!!sym(weights) := as.numeric(!!sym(weights))) %>%
       srvyr::as_survey_design(ids = !!sampling_id,
                               weights = !!weights) %>%
@@ -135,11 +133,14 @@ agg_score <-
                  value = NA)
 
     reduced_data <- data_scoring %>%
-      dplyr::select(weights, !!sampling_id,data_AP$admin_level, starts_with(var_to_analyse))
+      dplyr::select(weights,
+                    !!sampling_id,
+                    data_AP$admin_level,
+                    starts_with(var_to_analyse))
 
     if (nrow(reduced_data) == 1) {
       addVars_agg_table <- reduced_data %>%
-        dplyr::select(-weights,-sampling_id) %>%
+        dplyr::select(-weights, -sampling_id) %>%
         dplyr::group_by(!!sym(agg_level)) %>%
         tidyr::pivot_longer(-!!agg_level, names_to = "indicator", values_to = "value") %>%
         dplyr::mutate(choice = NA,
@@ -157,12 +158,17 @@ agg_score <-
         value = NA
       )
 
-    analysed_var <- map_dfr(var_to_analyse,
-                            ~analyse_var(design_data = design_data,
-                                         var_analyse =. ,
-                                         agg_level= agg_level))
+    analysed_var <- map_dfr(
+      var_to_analyse,
+      ~ analyse_var(
+        design_data = design_data,
+        var_analyse = . ,
+        agg_level = agg_level
+      )
+    )
 
-    analysed_var[[agg_level]] <- normalise_string(analysed_var[[agg_level]])
+    analysed_var[[agg_level]] <-
+      normalise_string(analysed_var[[agg_level]])
 
     analysed_var$context <- unique(data_AP$context)
 
@@ -205,7 +211,6 @@ aggregate_admin <-
   function(data,
            data_AP,
            ...) {
-
     weights_ap <-
       data_AP$indicator_code_source[data_AP$indicator_code == "weights"]
 
@@ -235,15 +240,18 @@ aggregate_admin <-
       var_to_analyse[!var_to_analyse %in% c("admin1", "admin2", "admin3", "weights", "sampling_id")]
 
     reduced_data <- data %>%
-      dplyr::select(weights, !!sampling_id,data_AP$admin_level, starts_with(var_to_analyse))
+      dplyr::select(weights,
+                    !!sampling_id,
+                    data_AP$admin_level,
+                    starts_with(var_to_analyse))
 
     if (nrow(reduced_data) == 1) {
       addVars_agg_table <- reduced_data %>%
-        dplyr::select(-weights,-sampling_id) %>%
+        dplyr::select(-weights, -sampling_id) %>%
         dplyr::group_by(!!sym(agg_level)) %>%
         tidyr::pivot_longer(-!!agg_level, names_to = "indicator", values_to = "value") %>%
         dplyr::mutate(choice = NA,
-               context = context) %>%
+                      context = context) %>%
         dplyr::select(!!agg_level, indicator, choice, value, context)
 
       return(addVars_agg_table)
@@ -251,8 +259,8 @@ aggregate_admin <-
 
     design_data <-
       srvyr::as_survey(reduced_data ,
-                ids = !!sampling_id,
-                weights = !!weights)
+                       ids = !!sampling_id,
+                       weights = !!weights)
 
     select_multiple_in_data <-
       butteR::auto_detect_select_multiple(design_data$variables)
@@ -270,7 +278,8 @@ aggregate_admin <-
                ")")
       # vars_selection_helper <- paste0("^(", paste(select_multiples_in_data_with_dot, collapse="|"), ")")
       select_multiple_logical_names <-
-        dplyr::select(design_data$variables, dplyr::matches(vars_selection_helper)) %>%
+        dplyr::select(design_data$variables,
+                      dplyr::matches(vars_selection_helper)) %>%
         dplyr::select(-dplyr::ends_with("_other")) %>% colnames()
       var_to_analyse_no_concatenated_select_multiple <-
         var_to_analyse [which(var_to_analyse %in% select_multiple_in_data == FALSE)]
@@ -285,13 +294,17 @@ aggregate_admin <-
     }
 
 
-    analysed_var <- map_dfr(var_to_analyse,
-                            ~analyse_var(design_data = design_data,
-                                         var_analyse =. ,
-                                         agg_level= agg_level))
+    analysed_var <- map_dfr(
+      var_to_analyse,
+      ~ analyse_var(
+        design_data = design_data,
+        var_analyse = . ,
+        agg_level = agg_level
+      )
+    )
 
     analysed_var <-
-      analysed_var[rowSums(is.na(analysed_var)) != ncol(analysed_var),]
+      analysed_var[rowSums(is.na(analysed_var)) != ncol(analysed_var), ]
 
     addVars_agg_table <- suppressWarnings(
       analysed_var %>%
@@ -305,7 +318,8 @@ aggregate_admin <-
           choice = case_when(
             !is.na(choice2) ~ as.character(choice2),
             TRUE ~ as.character(choice)
-          ),!!dplyr::sym(agg_level) := normalise_string(!!dplyr::sym(agg_level))
+          ),
+          !!dplyr::sym(agg_level) := normalise_string(!!dplyr::sym(agg_level))
         ) %>%
         dplyr::select(!!agg_level, indicator, choice, value) %>%
         dplyr::mutate(context = context) %>%

@@ -6,11 +6,17 @@
 #' @return
 #' @export
 #'
-check_indicator <- function(data, indicator){
-  if(!indicator %in% names(data)){
-    warning(call. = F, paste0(indicator," column was not found in source. Please check the column names."))
+check_indicator <- function(data, indicator) {
+  if (!indicator %in% names(data)) {
+    warning(
+      call. = F,
+      paste0(
+        indicator,
+        " column was not found in source. Please check the column names."
+      )
+    )
     return(TRUE)
-  }else{
+  } else{
     return(FALSE)
   }
 }
@@ -23,8 +29,9 @@ check_indicator <- function(data, indicator){
 #' @return
 #' @export
 #'
-check_source <- function(data,  indicators_to_check){
-  has_warnings <- lapply(indicators_to_check, check_indicator, data = data) %>%
+check_source <- function(data,  indicators_to_check) {
+  has_warnings <-
+    lapply(indicators_to_check, check_indicator, data = data) %>%
     unlist()
   return(any(has_warnings == TRUE))
 }
@@ -48,20 +55,20 @@ check_source <- function(data,  indicators_to_check){
 #' @examples
 #' df <- bfa_smart_2019_admin1
 #' cleaned_df <- clean_dataset(df)
-clean_dataset <- function(data,missings = NULL){
-  if(!is.data.frame(data)){
+clean_dataset <- function(data, missings = NULL) {
+  if (!is.data.frame(data)) {
     "data is a not a dataframe. It cannot be cleaned"
   }
-  if(is.null(missings)){
+  if (is.null(missings)) {
     map_dfc(data, rec_missing) %>%
-      mutate(across(where(is.list),unlist))
-  }else{
+      mutate(across(where(is.list), unlist))
+  } else{
     map_dfc(data, rec_missing, missings) %>%
-      mutate(across(where(is.list),unlist))
+      mutate(across(where(is.list), unlist))
   }
 
   map_dfc(data, rec_missing) %>%
-    mutate(across(where(is.list),unlist))
+    mutate(across(where(is.list), unlist))
 }
 
 #' Recode missing values to NA
@@ -78,10 +85,12 @@ clean_dataset <- function(data,missings = NULL){
 #' sum(is.na(x))
 #' x_rec <- rec_missing(x)
 #' sum(is.na(x_rec))
-rec_missing<-function(x,missings=c('N/A','n/a',' ','(vide)','(empty)','d/m','','NA','na')) {
-  x[x %in% missings] <- NA
-  return(x)
-}
+rec_missing <-
+  function(x,
+           missings = c('N/A', 'n/a', ' ', '(vide)', '(empty)', 'd/m', '', 'NA', 'na')) {
+    x[x %in% missings] <- NA
+    return(x)
+  }
 
 #' Normalise string
 #'
@@ -89,7 +98,7 @@ rec_missing<-function(x,missings=c('N/A','n/a',' ','(vide)','(empty)','d/m','','
 #' 1. removing extra spaces ([stringr::str_squish()]) and [trimws()]) 2. passing
 #' the string to lower case ([tolower()]) 3. removing all accents
 #' ([stringi::stri_trans_general()]), with id = "Latin-ASCII") 4. removing other
-#' special characters ('[-',.()/ ]') and replacing with '_'
+#' special characters ("-',.()/ ") and replacing with '_'
 #'
 #' @param string character string to be normalised. Accepts vectors too.
 #'
@@ -100,12 +109,12 @@ rec_missing<-function(x,missings=c('N/A','n/a',' ','(vide)','(empty)','d/m','','
 #'
 #' @examples
 #' normalise_string("àaF   kgfk")
-normalise_string <- function(string){
+normalise_string <- function(string) {
   no_ws <- stringr::str_squish(string)
   lower <- trimws(tolower(no_ws))
-  no_accent <- stringi::stri_trans_general(lower,"Latin-ASCII")
-  remove_other <- stringr::str_replace_all(no_accent, "[-',.()/ ]", "_")
+  no_accent <- stringi::stri_trans_general(lower, "Latin-ASCII")
+  remove_other <-
+    stringr::str_replace_all(no_accent, "[-',.()/ ]", "_")
 
   return(remove_other)
 }
-

@@ -18,7 +18,7 @@ Normalise provided string by :
 \item removing extra spaces (\code{\link[stringr:str_trim]{stringr::str_squish()}}) and \code{\link[=trimws]{trimws()}}) 2. passing
 the string to lower case (\code{\link[=tolower]{tolower()}}) 3. removing all accents
 (\code{\link[stringi:stri_trans_general]{stringi::stri_trans_general()}}), with id = "Latin-ASCII") 4. removing other
-special characters ('\link{-',.()/ }') and replacing with '_'
+special characters ("-',.()/ ") and replacing with '_'
 }
 }
 \examples{

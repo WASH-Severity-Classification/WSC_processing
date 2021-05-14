@@ -64,15 +64,10 @@ assign_result_high2low <-
            low_admin,
            pop_df,
            context_AP) {
-
     full_AP <- context_AP %>%
-      dplyr::mutate(
-        unique_data_source_name = paste(data_source_name,
-                                        data_sheet_name, sep = "-")
-      ) %>%
-      dplyr::filter(
-        unique_data_source_name == !!high_df_name
-      )
+      dplyr::mutate(unique_data_source_name = paste(data_source_name,
+                                                    data_sheet_name, sep = "-")) %>%
+      dplyr::filter(unique_data_source_name == !!high_df_name)
 
     high_admin <- unique(full_AP$admin_level)
     high_admin_n <- as.numeric(str_extract(high_admin, "[0-9]"))
@@ -90,20 +85,27 @@ assign_result_high2low <-
     #   summarise(weights = sum(weights))
 
 
-    highest_pop_level <- min(as.numeric(str_extract(names(data_pop_df), "[0-9]")), na.rm = TRUE)
-    highest_agg_level <- min(as.numeric(str_extract(names(high_df), "[0-9]")), na.rm = T)
+    highest_pop_level <-
+      min(as.numeric(str_extract(names(data_pop_df), "[0-9]")), na.rm = TRUE)
+    highest_agg_level <-
+      min(as.numeric(str_extract(names(high_df), "[0-9]")), na.rm = T)
     highest_both <- max(highest_pop_level, highest_agg_level)
 
-    admins_empty_high_n <- unique(str_extract(names(high_df), paste0("[",highest_agg_level+1,"-9]")))[!is.na(unique(str_extract(names(high_df), paste0("[",highest_agg_level+1,"-9]"))))]
+    admins_empty_high_n <-
+      unique(str_extract(names(high_df), paste0("[", highest_agg_level + 1, "-9]")))[!is.na(unique(str_extract(
+        names(high_df), paste0("[", highest_agg_level + 1, "-9]")
+      )))]
 
-    admins_nas_high <- paste0("admin",admins_empty_high_n)
+    admins_nas_high <- paste0("admin", admins_empty_high_n)
 
     high_df <- high_df %>%
       select(-all_of(admins_nas_high))
 
     low_df <- pop_df %>%
       select(paste0("admin", rep(highest_pop_level:low_admin_n))) %>%
-      left_join(high_df, by = c(paste0("admin", rep(highest_both:high_admin_n))))
+      left_join(high_df, by = c(paste0(
+        "admin", rep(highest_both:high_admin_n)
+      )))
 
     return(low_df)
 
@@ -174,15 +176,10 @@ assign_result_low2high <-
            high_admin,
            pop_df,
            context_AP) {
-
     full_AP <- context_AP %>%
-      dplyr::mutate(
-        unique_data_source_name = paste(data_source_name,
-                                        data_sheet_name, sep = "-")
-      ) %>%
-      dplyr::filter(
-        unique_data_source_name == !!low_df_name
-      )
+      dplyr::mutate(unique_data_source_name = paste(data_source_name,
+                                                    data_sheet_name, sep = "-")) %>%
+      dplyr::filter(unique_data_source_name == !!low_df_name)
 
     low_admin <- unique(full_AP$admin_level)
     low_admin_n <- as.numeric(str_extract(low_admin, "[0-9]"))
@@ -193,27 +190,35 @@ assign_result_low2high <-
       select(paste0("admin", rep(0:low_admin_n)),
              any_of(paste0("admin", rep(0:low_admin_n), "_pcode")),
              total_pop) %>%
-        group_by(!!sym(paste0("admin", low_admin_n-1))) %>%
-        mutate(weights = total_pop/sum(total_pop)) %>%
+      group_by(!!sym(paste0("admin", low_admin_n - 1))) %>%
+      mutate(weights = total_pop / sum(total_pop)) %>%
       select(-total_pop)
 
     low_df_weighted <- low_df %>%
-      left_join(data_pop_df, by = c(paste0("admin", rep(highest_both:low_admin_n))))
+      left_join(data_pop_df, by = c(paste0(
+        "admin", rep(highest_both:low_admin_n)
+      )))
 
-    highest_pop_level <- min(as.numeric(str_extract(names(data_pop_df), "[0-9]")), na.rm = TRUE)
-    highest_agg_level <- min(as.numeric(str_extract(names(low_df), "[0-9]")), na.rm = T)
+    highest_pop_level <-
+      min(as.numeric(str_extract(names(data_pop_df), "[0-9]")), na.rm = TRUE)
+    highest_agg_level <-
+      min(as.numeric(str_extract(names(low_df), "[0-9]")), na.rm = T)
     highest_both <- max(highest_pop_level, highest_agg_level)
 
     source <- unique(full_AP$unique_data_source_name)
     context <- unique(full_AP$context)
 
-    group_by_adms <- as_vector(paste0("admin", rep(highest_agg_level:high_admin_n)))
+    group_by_adms <-
+      as_vector(paste0("admin", rep(highest_agg_level:high_admin_n)))
 
     high_df <- low_df_weighted %>%
       group_by(across(group_by_adms), indicator, choice) %>%
-      summarise(value = weighted.mean(as.numeric(value), w = weights),
-                source = !!source, context = !!context, .groups = "drop")
+      summarise(
+        value = weighted.mean(as.numeric(value), w = weights),
+        source = !!source,
+        context = !!context,
+        .groups = "drop"
+      )
 
     return(high_df)
   }
-
