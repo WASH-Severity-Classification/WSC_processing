@@ -65,6 +65,8 @@ The goal is to get data as granular as possible (lowest administrative unit poss
 * Contact National WASH Cluster for data sources related to WASH
 * Through REACH colleagues or WASH Cluster contact Health Cluster or ministry of health to get epidemiological data for Acute Watery diarrhoea (AWD), Acute Bloody Diarrhoea (ABD), and malaria at least.
 
+Some sources are available at global level and are preprocessed. See here for the [scripts](https://impact-geneva.quickconnect.to/d/f/603993889122127508)
+
 # 3. Document data sources in data_sources (1 day)
 
 Once the first data sources have been gathered, it's important to start documenting them in details in the [data_sources](https://docs.google.com/spreadsheets/d/1nBzXeqxVJzS5g8nbEGCIPL8fwTYyu3KYWpFgwfJQ1so/edit#gid=2068774981) sheet to avoid problems further down the line.
